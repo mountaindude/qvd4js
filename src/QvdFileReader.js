@@ -32,11 +32,88 @@ export class QvdFileReader {
   /**
    * Reads the binary data of the QVD file. This method is part of the parsing process
    * and should not be called directly.
+   *
+   * @param {number|null} maxRows The maximum number of rows to load. If null, all data is loaded.
    */
-  async _readData() {
+  async _readData(maxRows = null) {
+    if (maxRows === null) {
+      // Load entire file into memory (original behavior)
+      this._buffer = await fs.promises.readFile(this._path);
+      return;
+    }
+
+    const HEADER_DELIMITER = '\r\n\0';
+    const CHUNK_SIZE = 64 * 1024; // 64KB chunks
+
+    // Use streaming to find the header delimiter dynamically
+    const stream = fs.createReadStream(this._path, {
+      highWaterMark: CHUNK_SIZE,
+    });
+
+    let headerBuffer = Buffer.alloc(0);
+    let headerDelimiterIndex = -1;
+
+    try {
+      // Read chunks until we find the delimiter
+      for await (const chunk of stream) {
+        headerBuffer = Buffer.concat([headerBuffer, chunk]);
+        headerDelimiterIndex = headerBuffer.indexOf(HEADER_DELIMITER);
+
+        if (headerDelimiterIndex !== -1) {
+          // Found the delimiter, stop streaming
+          stream.destroy();
+          break;
+        }
+      }
+    } catch (error) {
+      // Ignore destroy errors (expected when we stop the stream early)
+      if (error && typeof error === 'object' && 'code' in error && error.code !== 'ERR_STREAM_PREMATURE_CLOSE') {
+        throw error;
+      }
+    }
+
+    if (headerDelimiterIndex === -1) {
+      throw new QvdCorruptedError(
+        'The XML header section does not exist or is not properly delimited from the binary data.',
+        {
+          file: this._path,
+          stage: 'readData',
+        },
+      );
+    }
+
+    const headerEndIndex = headerDelimiterIndex + HEADER_DELIMITER.length;
+
+    // Parse header to get metadata about symbol and index table locations
+    const headerXml = headerBuffer.subarray(0, headerEndIndex).toString();
+    const headerObj = await xml.parseStringPromise(headerXml, {explicitArray: false});
+
+    if (!headerObj) {
+      throw new QvdParseError('The XML header could not be parsed.', {
+        file: this._path,
+        stage: 'readData',
+      });
+    }
+
+    const symbolTableOffset = headerEndIndex;
+    const symbolTableLength = parseInt(headerObj['QvdTableHeader']['Offset'], 10);
+    const indexTableOffset = symbolTableOffset + symbolTableLength;
+    const recordSize = parseInt(headerObj['QvdTableHeader']['RecordByteSize'], 10);
+    const totalRows = parseInt(headerObj['QvdTableHeader']['NoOfRecords'], 10);
+    const rowsToLoad = Math.min(maxRows, totalRows);
+
+    // Calculate how much of the index table we need to read
+    const indexTableBytesToRead = rowsToLoad * recordSize;
+
+    // Calculate total bytes needed: header + symbol table + partial index table
+    const totalBytesToRead = indexTableOffset + indexTableBytesToRead;
+
+    // Now read the exact portion we need from the file
     const fd = await fs.promises.open(this._path, 'r');
-    this._buffer = await fs.promises.readFile(fd);
-    fd.close();
+    this._buffer = Buffer.allocUnsafe(totalBytesToRead);
+    // @ts-ignore - Buffer type compatibility
+    await fd.read(this._buffer, 0, totalBytesToRead, 0);
+    await fd.close();
   }
 
   /**
@@ -45,10 +122,13 @@ export class QvdFileReader {
    */
   async _parseHeader() {
     if (!this._buffer) {
-      throw new QvdCorruptedError('The QVD file has not been loaded in the proper order or has not been loaded at all.', {
-        file: this._path,
-        stage: 'parseHeader',
-      });
+      throw new QvdCorruptedError(
+        'The QVD file has not been loaded in the proper order or has not been loaded at all.',
+        {
+          file: this._path,
+          stage: 'parseHeader',
+        },
+      );
     }
 
     const HEADER_DELIMITER = '\r\n\0';
@@ -57,10 +137,13 @@ export class QvdFileReader {
     const headerDelimiterIndex = this._buffer.indexOf(HEADER_DELIMITER, headerBeginIndex);
 
     if (!headerDelimiterIndex) {
-      throw new QvdCorruptedError('The XML header section does not exist or is not properly delimited from the binary data.', {
-        file: this._path,
-        stage: 'parseHeader',
-      });
+      throw new QvdCorruptedError(
+        'The XML header section does not exist or is not properly delimited from the binary data.',
+        {
+          file: this._path,
+          stage: 'parseHeader',
+        },
+      );
     }
 
     const headerEndIndex = headerDelimiterIndex + HEADER_DELIMITER.length;
@@ -130,10 +213,13 @@ export class QvdFileReader {
    */
   async _parseSymbolTable() {
     if (!this._buffer || !this._header || !this._symbolTableOffset || !this._indexTableOffset) {
-      throw new QvdCorruptedError('The QVD file has not been loaded in the proper order or has not been loaded at all.', {
-        file: this._path,
-        stage: 'parseSymbolTable',
-      });
+      throw new QvdCorruptedError(
+        'The QVD file has not been loaded in the proper order or has not been loaded at all.',
+        {
+          file: this._path,
+          stage: 'parseSymbolTable',
+        },
+      );
     }
 
     let fields = this._header['QvdTableHeader']['Fields']['QvdFieldHeader'];
@@ -268,13 +354,18 @@ export class QvdFileReader {
   /**
    * Parses the bit stuffed index table of the QVD file. This method is part of the parsing process
    * and should not be called directly.
+   *
+   * @param {number|null} maxRows The maximum number of rows to parse. If null, all rows are parsed.
    */
-  async _parseIndexTable() {
+  async _parseIndexTable(maxRows = null) {
     if (!this._buffer || !this._header || !this._indexTableOffset) {
-      throw new QvdCorruptedError('The QVD file has not been loaded in the proper order or has not been loaded at all.', {
-        file: this._path,
-        stage: 'parseIndexTable',
-      });
+      throw new QvdCorruptedError(
+        'The QVD file has not been loaded in the proper order or has not been loaded at all.',
+        {
+          file: this._path,
+          stage: 'parseIndexTable',
+        },
+      );
     }
 
     let fields = this._header['QvdTableHeader']['Fields']['QvdFieldHeader'];
@@ -286,6 +377,9 @@ export class QvdFileReader {
     // Size of a single row of the index table in bytes
     const recordSize = parseInt(this._header['QvdTableHeader']['RecordByteSize'], 10);
 
+    const totalRows = parseInt(this._header['QvdTableHeader']['NoOfRecords'], 10);
+    const rowsToLoad = maxRows !== null ? Math.min(maxRows, totalRows) : totalRows;
+
     const indexBuffer = this._buffer.subarray(
       this._indexTableOffset,
       this._indexTableOffset + parseInt(this._header['QvdTableHeader']['Length'], 10) + 1,
@@ -293,8 +387,12 @@ export class QvdFileReader {
 
     this._indexTable = [];
 
-    // Parse all rows of the index table, each row contains the indices of the symbol table for each field/column
-    for (let pointer = 0; pointer < indexBuffer.length; pointer += recordSize) {
+    // Parse rows of the index table, each row contains the indices of the symbol table for each field/column
+    for (
+      let pointer = 0, rowCount = 0;
+      pointer < indexBuffer.length && rowCount < rowsToLoad;
+      pointer += recordSize, rowCount++
+    ) {
       const bytes = new Int32Array(indexBuffer.subarray(pointer, pointer + recordSize));
       bytes.reverse();
 
@@ -333,13 +431,14 @@ export class QvdFileReader {
   /**
    * Loads the QVD file into memory and parses it.
    *
+   * @param {number|null} maxRows The maximum number of rows to load. If null, all rows are loaded.
    * @return {Promise<QvdDataFrame>} The loaded QVD file.
    */
-  async load() {
-    await this._readData();
+  async load(maxRows = null) {
+    await this._readData(maxRows);
     await this._parseHeader();
     await this._parseSymbolTable();
-    await this._parseIndexTable();
+    await this._parseIndexTable(maxRows);
 
     assert(this._header, 'The QVD file header has not been parsed.');
     assert(this._symbolTable, 'The QVD file symbol table has not been parsed.');
