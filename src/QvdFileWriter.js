@@ -6,6 +6,7 @@ import crypto from 'crypto';
 import xml from 'xml2js';
 import assert from 'assert';
 import {QvdSymbol} from './QvdSymbol.js';
+import {QvdCorruptedError} from './QvdErrors.js';
 
 /**
  * @typedef {import('./QvdDataFrame.js').QvdDataFrame} QvdDataFrame

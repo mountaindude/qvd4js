@@ -5,6 +5,7 @@ import xml from 'xml2js';
 import assert from 'assert';
 import {QvdSymbol} from './QvdSymbol.js';
 import {QvdDataFrame} from './QvdDataFrame.js';
+import {QvdParseError, QvdValidationError, QvdCorruptedError} from './QvdErrors.js';
 
 /**
  * Parses a QVD file and loads it into memory.
@@ -44,7 +45,10 @@ export class QvdFileReader {
    */
   async _parseHeader() {
     if (!this._buffer) {
-      throw new Error('The QVD file has not been loaded in the proper order or has not been loaded at all.');
+      throw new QvdCorruptedError('The QVD file has not been loaded in the proper order or has not been loaded at all.', {
+        file: this._path,
+        stage: 'parseHeader',
+      });
     }
 
     const HEADER_DELIMITER = '\r\n\0';
@@ -53,7 +57,10 @@ export class QvdFileReader {
     const headerDelimiterIndex = this._buffer.indexOf(HEADER_DELIMITER, headerBeginIndex);
 
     if (!headerDelimiterIndex) {
-      throw new Error('The XML header section does not exist or is not properly delimited from the binary data.');
+      throw new QvdCorruptedError('The XML header section does not exist or is not properly delimited from the binary data.', {
+        file: this._path,
+        stage: 'parseHeader',
+      });
     }
 
     const headerEndIndex = headerDelimiterIndex + HEADER_DELIMITER.length;
@@ -101,7 +108,10 @@ export class QvdFileReader {
     this._header = await xml.parseStringPromise(headerBuffer.toString(), {explicitArray: false});
 
     if (!this._header) {
-      throw new Error('The XML header could not be parsed.');
+      throw new QvdParseError('The XML header could not be parsed.', {
+        file: this._path,
+        stage: 'parseHeader',
+      });
     }
 
     /*
@@ -120,7 +130,10 @@ export class QvdFileReader {
    */
   async _parseSymbolTable() {
     if (!this._buffer || !this._header || !this._symbolTableOffset || !this._indexTableOffset) {
-      throw new Error('The QVD file has not been loaded in the proper order or has not been loaded at all.');
+      throw new QvdCorruptedError('The QVD file has not been loaded in the proper order or has not been loaded at all.', {
+        file: this._path,
+        stage: 'parseSymbolTable',
+      });
     }
 
     let fields = this._header['QvdTableHeader']['Fields']['QvdFieldHeader'];
@@ -223,7 +236,12 @@ export class QvdFileReader {
             break;
           }
           default: {
-            throw new Error('Unknown data type: ' + typeByte.toString(16));
+            throw new QvdParseError('Unknown symbol type byte', {
+              typeByte: typeByte.toString(16),
+              offset: pointer,
+              file: this._path,
+              stage: 'parseSymbolTable',
+            });
           }
         }
       }
@@ -253,7 +271,10 @@ export class QvdFileReader {
    */
   async _parseIndexTable() {
     if (!this._buffer || !this._header || !this._indexTableOffset) {
-      throw new Error('The QVD file has not been loaded in the proper order or has not been loaded at all.');
+      throw new QvdCorruptedError('The QVD file has not been loaded in the proper order or has not been loaded at all.', {
+        file: this._path,
+        stage: 'parseIndexTable',
+      });
     }
 
     let fields = this._header['QvdTableHeader']['Fields']['QvdFieldHeader'];
@@ -333,7 +354,11 @@ export class QvdFileReader {
      */
     const getRow = (index) => {
       if (!this._indexTable || index >= this._indexTable.length) {
-        throw new Error('Index is out of bounds');
+        throw new QvdValidationError('Row index out of bounds', {
+          index: index,
+          max: this._indexTable ? this._indexTable.length - 1 : -1,
+          file: this._path,
+        });
       }
 
       return this._indexTable?.[index].map((/** @type {number} */ symbolIndex, /** @type {number} */ fieldIndex) => {
