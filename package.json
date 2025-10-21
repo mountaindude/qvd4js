@@ -17,6 +17,13 @@
     "email": "info@mueller-constantin.de",
     "url": "https://mueller-constantin.de"
   },
+  "contributors": [
+    {
+      "name": "Göran Sander",
+      "email": "goran@ptarmiganlabs.com",
+      "url": "https://github.com/mountaindude"
+    }
+  ],
   "repository": {
     "type": "git",
     "url": "https://github.com/MuellerConstantin/qvd4js.git"
