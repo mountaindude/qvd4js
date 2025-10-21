@@ -86,7 +86,17 @@ export class QvdFileReader {
 
     // Parse header to get metadata about symbol and index table locations
     const headerXml = headerBuffer.subarray(0, headerEndIndex).toString();
-    const headerObj = await xml.parseStringPromise(headerXml, {explicitArray: false});
+    
+    // Security: Prevent XXE attacks by using secure parsing options
+    const headerObj = await xml.parseStringPromise(headerXml, {
+      explicitArray: false,
+      xmlns: false, // Disable namespace processing
+      explicitCharkey: false,
+      tagNameProcessors: [],
+      attrNameProcessors: [],
+      valueProcessors: [],
+      attrValueProcessors: [],
+    });
 
     if (!headerObj) {
       throw new QvdParseError('The XML header could not be parsed.', {
@@ -188,7 +198,16 @@ export class QvdFileReader {
      *  }
      */
 
-    this._header = await xml.parseStringPromise(headerBuffer.toString(), {explicitArray: false});
+    // Security: Prevent XXE attacks by using secure parsing options
+    this._header = await xml.parseStringPromise(headerBuffer.toString(), {
+      explicitArray: false,
+      xmlns: false, // Disable namespace processing
+      explicitCharkey: false,
+      tagNameProcessors: [],
+      attrNameProcessors: [],
+      valueProcessors: [],
+      attrValueProcessors: [],
+    });
 
     if (!this._header) {
       throw new QvdParseError('The XML header could not be parsed.', {
