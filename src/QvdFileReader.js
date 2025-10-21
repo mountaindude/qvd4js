@@ -32,11 +32,75 @@ export class QvdFileReader {
   /**
    * Reads the binary data of the QVD file. This method is part of the parsing process
    * and should not be called directly.
+   * 
+   * @param {number|null} maxRows The maximum number of rows to load. If null, all data is loaded.
    */
-  async _readData() {
+  async _readData(maxRows = null) {
     const fd = await fs.promises.open(this._path, 'r');
-    this._buffer = await fs.promises.readFile(fd);
-    fd.close();
+    
+    if (maxRows === null) {
+      // Load entire file into memory (original behavior)
+      this._buffer = await fs.promises.readFile(fd);
+      await fd.close();
+      return;
+    }
+    
+    // Lazy loading: First, read enough to parse the header
+    const stats = await fd.stat();
+    const fileSize = stats.size;
+    
+    // Read first chunk to get header (headers are typically < 100KB, but let's be safe with 500KB)
+    const initialReadSize = Math.min(500 * 1024, fileSize);
+    const headerBuffer = Buffer.allocUnsafe(initialReadSize);
+    await fd.read(headerBuffer, 0, initialReadSize, 0);
+    
+    // Find header delimiter to determine header size
+    const HEADER_DELIMITER = '\r\n\0';
+    const headerDelimiterIndex = headerBuffer.indexOf(HEADER_DELIMITER);
+    
+    if (headerDelimiterIndex === -1) {
+      await fd.close();
+      throw new QvdCorruptedError(
+        'The XML header section does not exist or is not properly delimited from the binary data.',
+        {
+          file: this._path,
+          stage: 'readData',
+        },
+      );
+    }
+    
+    const headerEndIndex = headerDelimiterIndex + HEADER_DELIMITER.length;
+    
+    // Parse header to get metadata about symbol and index table locations
+    const headerXml = headerBuffer.subarray(0, headerEndIndex).toString();
+    const headerObj = await xml.parseStringPromise(headerXml, {explicitArray: false});
+    
+    if (!headerObj) {
+      await fd.close();
+      throw new QvdParseError('The XML header could not be parsed.', {
+        file: this._path,
+        stage: 'readData',
+      });
+    }
+    
+    const symbolTableOffset = headerEndIndex;
+    const symbolTableLength = parseInt(headerObj['QvdTableHeader']['Offset'], 10);
+    const indexTableOffset = symbolTableOffset + symbolTableLength;
+    const recordSize = parseInt(headerObj['QvdTableHeader']['RecordByteSize'], 10);
+    const totalRows = parseInt(headerObj['QvdTableHeader']['NoOfRecords'], 10);
+    const rowsToLoad = Math.min(maxRows, totalRows);
+    
+    // Calculate how much of the index table we need to read
+    const indexTableBytesToRead = rowsToLoad * recordSize;
+    
+    // Calculate total bytes needed: header + symbol table + partial index table
+    const totalBytesToRead = indexTableOffset + indexTableBytesToRead;
+    
+    // Read only the required portion of the file
+    this._buffer = Buffer.allocUnsafe(totalBytesToRead);
+    await fd.read(this._buffer, 0, totalBytesToRead, 0);
+    
+    await fd.close();
   }
 
   /**
@@ -358,7 +422,7 @@ export class QvdFileReader {
    * @return {Promise<QvdDataFrame>} The loaded QVD file.
    */
   async load(maxRows = null) {
-    await this._readData();
+    await this._readData(maxRows);
     await this._parseHeader();
     await this._parseSymbolTable();
     await this._parseIndexTable(maxRows);
