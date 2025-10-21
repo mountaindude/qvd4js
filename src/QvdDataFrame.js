@@ -353,8 +353,15 @@ export class QvdDataFrame {
    *
    * @param {number} n The number of rows to return.
    * @return {QvdDataFrame} The first n rows of the data frame.
+   * @throws {QvdValidationError} If n is not a non-negative integer.
    */
   head(n = 5) {
+    if (typeof n !== 'number' || !Number.isInteger(n) || n < 0) {
+      throw new QvdValidationError('head() requires a non-negative integer', {
+        provided: n,
+        type: typeof n,
+      });
+    }
     return new QvdDataFrame(this._data.slice(0, n), this._columns, this._metadata);
   }
 
@@ -363,9 +370,16 @@ export class QvdDataFrame {
    *
    * @param {number} n The number of rows to return.
    * @return {QvdDataFrame} The first n rows of the data frame.
+   * @throws {QvdValidationError} If n is not a non-negative integer.
    */
   tail(n = 5) {
-    return new QvdDataFrame(this._data.slice(-n), this._columns, this._metadata);
+    if (typeof n !== 'number' || !Number.isInteger(n) || n < 0) {
+      throw new QvdValidationError('tail() requires a non-negative integer', {
+        provided: n,
+        type: typeof n,
+      });
+    }
+    return new QvdDataFrame(n === 0 ? [] : this._data.slice(-n), this._columns, this._metadata);
   }
 
   /**
@@ -373,8 +387,24 @@ export class QvdDataFrame {
    *
    * @param  {...number} args The indices of the rows to return.
    * @return {QvdDataFrame} The selected rows of the data frame.
+   * @throws {QvdValidationError} If any index is not an integer or is out of bounds.
    */
   rows(...args) {
+    for (const index of args) {
+      if (typeof index !== 'number' || !Number.isInteger(index)) {
+        throw new QvdValidationError('rows() requires integer indices', {
+          provided: index,
+          type: typeof index,
+        });
+      }
+      if (index < 0 || index >= this._data.length) {
+        throw new QvdValidationError(`Row index ${index} out of bounds`, {
+          index: index,
+          validRange: [0, this._data.length - 1],
+          dataLength: this._data.length,
+        });
+      }
+    }
     return new QvdDataFrame(
       args.map((index) => this._data[index]),
       this._columns,
@@ -388,8 +418,28 @@ export class QvdDataFrame {
    * @param {number} row The index of the row.
    * @param {string} column The name of the column.
    * @return {any} The value at the specified row and column.
+   * @throws {QvdValidationError} If row is not an integer, out of bounds, or column does not exist.
    */
   at(row, column) {
+    if (typeof row !== 'number' || !Number.isInteger(row)) {
+      throw new QvdValidationError('Row index must be an integer', {
+        provided: row,
+        type: typeof row,
+      });
+    }
+    if (row < 0 || row >= this._data.length) {
+      throw new QvdValidationError(`Row index ${row} out of bounds`, {
+        index: row,
+        validRange: [0, this._data.length - 1],
+        dataLength: this._data.length,
+      });
+    }
+    if (!this._columns.includes(column)) {
+      throw new QvdValidationError(`Column '${column}' does not exist`, {
+        column: column,
+        availableColumns: this._columns,
+      });
+    }
     return this._data[row][this._columns.indexOf(column)];
   }
 
@@ -398,8 +448,17 @@ export class QvdDataFrame {
    *
    * @param  {...string} args The names of the columns to select.
    * @return {QvdDataFrame} The selected columns of the data frame.
+   * @throws {QvdValidationError} If any column name does not exist.
    */
   select(...args) {
+    for (const column of args) {
+      if (!this._columns.includes(column)) {
+        throw new QvdValidationError(`Column '${column}' does not exist`, {
+          column: column,
+          availableColumns: this._columns,
+        });
+      }
+    }
     const indices = args.map((arg) => this._columns.indexOf(arg));
     const data = this._data.map((row) => indices.map((index) => row[index]));
     const columns = indices.map((index) => this._columns[index]);
