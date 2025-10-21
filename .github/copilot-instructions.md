@@ -158,6 +158,52 @@ A QVD file consists of three parts:
 - **Version**: 1.0.5
 - **Author**: Constantin Müller
 
+## Commit Message Guidelines
+
+All commits made by agents **MUST** follow the [Conventional Commits](https://www.conventionalcommits.org/) specification.
+
+### Commit Message Format
+
+```
+<type>[optional scope]: <description>
+
+[optional body]
+
+[optional footer(s)]
+```
+
+### Commit Types
+
+Use the following commit types:
+
+- **feat**: A new feature (triggers MINOR version bump)
+- **fix**: A bug fix (triggers PATCH version bump)
+- **docs**: Documentation changes only
+- **style**: Code style changes (formatting, missing semi-colons, etc.) - no code change
+- **refactor**: Code refactoring without changing functionality
+- **perf**: Performance improvements
+- **test**: Adding or updating tests
+- **build**: Changes to build system or dependencies
+- **ci**: Changes to CI configuration files and scripts
+- **chore**: Other changes that don't modify src or test files
+
+### Breaking Changes
+
+Breaking changes must be indicated by:
+- Adding `!` after the type/scope: `feat!: drop support for Node 14`
+- Or including `BREAKING CHANGE:` in the footer
+
+### Examples
+
+```
+feat(dataframe): add support for filtering rows
+fix: correct symbol table parsing for dual types
+docs: update installation instructions in README
+test: add tests for QvdFileWriter edge cases
+refactor: simplify buffer operations in QvdSymbol
+chore: update dependencies to latest versions
+```
+
 ## When Contributing
 
 1. Ensure all tests pass: `npm run test`
@@ -166,3 +212,4 @@ A QVD file consists of three parts:
 4. Maintain or improve test coverage
 5. Update documentation in README.md for any API changes
 6. Follow existing code patterns and style
+7. **All commits must follow Conventional Commits format** (see above)
