@@ -8,29 +8,31 @@ structure and vica versa. The library is written to be used in a Node.js environ
 
 ---
 
-- [Install](#install)
-- [Usage](#usage)
-- [QVD File Format](#qvd-file-format)
-  - [XML Header](#xml-header)
-  - [Symbol Table](#symbol-table)
-  - [Index Table](#index-table)
-- [API Documentation](#api-documentation)
-  - [QvdDataFrame](#qvddataframe)
-    - [`static fromQvd(path: string): Promise<QvdDataFrame>`](#static-fromqvdpath-string-promiseqvddataframe)
-    - [`static fromDict(dict: object): Promise<QvdDataFrame>`](#static-fromdictdict-object-promiseqvddataframe)
-    - [`head(n: number): QvdDataFrame`](#headn-number-qvddataframe)
-    - [`tail(n: number): QvdDataFrame`](#tailn-number-qvddataframe)
-    - [`rows(...args: number): QvdDataFrame`](#rowsargs-number-qvddataframe)
-    - [`at(row: number, column: string): any`](#atrow-number-column-string-any)
-    - [`select(...args: string): QvdDataFrame`](#selectargs-string-qvddataframe)
-    - [`toDict(): Promise<object>`](#todict-promiseobject)
-    - [`toQvd(path: string): Promise<void>`](#toqvdpath-string-promisevoid)
-    - [`getFieldMetadata(fieldName: string): object | null`](#getfieldmetadatafieldname-string-object--null)
-    - [`getAllFieldMetadata(): object[]`](#getallfieldmetadata-object)
-    - [`setFileMetadata(metadata: object): void`](#setfilemetadatametadata-object-void)
-    - [`setFieldMetadata(fieldName: string, metadata: object): void`](#setfieldmetadatafieldname-string-metadata-object-void)
-- [License](#license)
-  - [Forbidden](#forbidden)
+- [qvd4js](#qvd4js)
+  - [Install](#install)
+  - [Usage](#usage)
+    - [Working with Metadata](#working-with-metadata)
+  - [QVD File Format](#qvd-file-format)
+    - [XML Header](#xml-header)
+    - [Symbol Table](#symbol-table)
+    - [Index Table](#index-table)
+  - [API Documentation](#api-documentation)
+    - [QvdDataFrame](#qvddataframe)
+      - [`static fromQvd(path: string): Promise<QvdDataFrame>`](#static-fromqvdpath-string-promiseqvddataframe)
+      - [`static fromDict(dict: object): Promise<QvdDataFrame>`](#static-fromdictdict-object-promiseqvddataframe)
+      - [`head(n: number): QvdDataFrame`](#headn-number-qvddataframe)
+      - [`tail(n: number): QvdDataFrame`](#tailn-number-qvddataframe)
+      - [`rows(...args: number): QvdDataFrame`](#rowsargs-number-qvddataframe)
+      - [`at(row: number, column: string): any`](#atrow-number-column-string-any)
+      - [`select(...args: string): QvdDataFrame`](#selectargs-string-qvddataframe)
+      - [`toDict(): Promise<object>`](#todict-promiseobject)
+      - [`toQvd(path: string): Promise<void>`](#toqvdpath-string-promisevoid)
+      - [`getFieldMetadata(fieldName: string): object | null`](#getfieldmetadatafieldname-string-object--null)
+      - [`getAllFieldMetadata(): object[]`](#getallfieldmetadata-object)
+      - [`setFileMetadata(metadata: object): void`](#setfilemetadatametadata-object-void)
+      - [`setFieldMetadata(fieldName: string, metadata: object): void`](#setfieldmetadatafieldname-string-metadata-object-void)
+  - [License](#license)
+    - [Forbidden](#forbidden)
 
 ---
 
@@ -82,7 +84,7 @@ console.log(fieldMeta.tags);
 
 // Get all field metadata
 const allFields = df.getAllFieldMetadata();
-allFields.forEach(field => {
+allFields.forEach((field) => {
   console.log(`${field.fieldName}: ${field.noOfSymbols} symbols`);
 });
 
@@ -152,7 +154,7 @@ abstraction access to the QVD file content. This includes meta information as we
 | `data`         | `any[][]`  | The actual data records of the QVD file. The first dimension represents the single rows.                           |
 | `columns`      | `string[]` | The names of the fields that are contained in the QVD file.                                                        |
 | `metadata`     | `object`   | The complete metadata object from the QVD file header, or null if not loaded from a QVD file.                      |
-| `fileMetadata` | `object`   | File-level metadata from the QVD header (qvBuildNo, tableName, createUtcTime, etc.).                              |
+| `fileMetadata` | `object`   | File-level metadata from the QVD header (qvBuildNo, tableName, createUtcTime, etc.).                               |
 
 #### `static fromQvd(path: string): Promise<QvdDataFrame>`
 
@@ -202,9 +204,10 @@ The method `toQvd` writes the data frame to a QVD file at the specified path.
 The method `getFieldMetadata` returns the metadata for a specific field/column from the QVD header. Returns null if the field is not found or metadata is not available.
 
 The returned object contains:
+
 - `fieldName`: Name of the field
 - `bitOffset`: Bit offset in the index table
-- `bitWidth`: Bit width in the index table  
+- `bitWidth`: Bit width in the index table
 - `bias`: Bias value for index calculation
 - `noOfSymbols`: Number of unique symbols/values
 - `offset`: Byte offset in the symbol table
@@ -224,6 +227,7 @@ The method `getAllFieldMetadata` returns an array of metadata objects for all fi
 The method `setFileMetadata` allows modifying file-level metadata. Only modifiable properties are updated; immutable properties related to data storage are ignored.
 
 Modifiable properties:
+
 - `qvBuildNo`: QlikView build number
 - `creatorDoc`: Document GUID that created the QVD
 - `createUtcTime`: Creation timestamp
@@ -240,6 +244,7 @@ Modifiable properties:
 - `lineage`: Data lineage information
 
 Immutable properties (cannot be modified):
+
 - `noOfRecords`: Number of records
 - `recordByteSize`: Record byte size
 - `offset`: Byte offset in file
@@ -250,11 +255,13 @@ Immutable properties (cannot be modified):
 The method `setFieldMetadata` allows modifying field-level metadata for a specific field. Only modifiable properties are updated; immutable properties related to data storage are ignored.
 
 Modifiable properties:
+
 - `comment`: Field comment/description
 - `numberFormat`: Number format settings (Type, nDec, UseThou, Fmt, Dec, Thou)
 - `tags`: Field tags (typically used for field classification)
 
 Immutable properties (cannot be modified):
+
 - `offset`: Byte offset in symbol table
 - `length`: Byte length in symbol table
 - `bitOffset`: Bit offset in index table
