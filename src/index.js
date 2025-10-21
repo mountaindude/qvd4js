@@ -1,3 +1,6 @@
 // @ts-check
 
-export {QvdSymbol, QvdDataFrame, QvdFileReader, QvdFileWriter} from './qvd';
+export {QvdSymbol} from './QvdSymbol.js';
+export {QvdDataFrame} from './QvdDataFrame.js';
+export {QvdFileReader} from './QvdFileReader.js';
+export {QvdFileWriter} from './QvdFileWriter.js';
