@@ -188,10 +188,12 @@ export class QvdDataFrame {
    * Represents the data frame stored inside a QVD file.
    * @param {Array<Array<any>>} data The data of the data frame.
    * @param {Array<string>} columns The columns of the data frame.
+   * @param {Object|null} metadata The metadata from the QVD file header (optional).
    */
-  constructor(data, columns) {
+  constructor(data, columns, metadata = null) {
     this._data = data;
     this._columns = columns;
+    this._metadata = metadata;
   }
 
   /**
@@ -216,13 +218,242 @@ export class QvdDataFrame {
   }
 
   /**
+   * Returns the complete metadata object from the QVD file header.
+   * @return {Object|null} The complete metadata object or null if not available.
+   */
+  get metadata() {
+    return this._metadata;
+  }
+
+  /**
+   * Returns file-level metadata from the QVD header.
+   * @return {Object} File-level metadata properties.
+   */
+  get fileMetadata() {
+    if (!this._metadata) {
+      return {};
+    }
+
+    const header = this._metadata;
+    return {
+      qvBuildNo: header.QvBuildNo,
+      creatorDoc: header.CreatorDoc,
+      createUtcTime: header.CreateUtcTime,
+      sourceCreateUtcTime: header.SourceCreateUtcTime,
+      sourceFileUtcTime: header.SourceFileUtcTime,
+      sourceFileSize: header.SourceFileSize,
+      staleUtcTime: header.StaleUtcTime,
+      tableName: header.TableName,
+      noOfRecords: header.NoOfRecords,
+      recordByteSize: header.RecordByteSize,
+      offset: header.Offset,
+      length: header.Length,
+      compression: header.Compression,
+      comment: header.Comment,
+      encryptionInfo: header.EncryptionInfo,
+      tableTags: header.TableTags,
+      profilingData: header.ProfilingData,
+      lineage: header.Lineage,
+    };
+  }
+
+  /**
+   * Returns field-level metadata for a specific field/column.
+   * @param {string} fieldName The name of the field.
+   * @return {Object|null} Field metadata or null if field not found.
+   */
+  getFieldMetadata(fieldName) {
+    if (!this._metadata || !this._metadata.Fields || !this._metadata.Fields.QvdFieldHeader) {
+      return null;
+    }
+
+    let fields = this._metadata.Fields.QvdFieldHeader;
+    if (!Array.isArray(fields)) {
+      fields = [fields];
+    }
+
+    const field = fields.find((f) => f.FieldName === fieldName);
+    if (!field) {
+      return null;
+    }
+
+    return {
+      fieldName: field.FieldName,
+      bitOffset: field.BitOffset,
+      bitWidth: field.BitWidth,
+      bias: field.Bias,
+      noOfSymbols: field.NoOfSymbols,
+      offset: field.Offset,
+      length: field.Length,
+      comment: field.Comment,
+      numberFormat: field.NumberFormat,
+      tags: field.Tags,
+    };
+  }
+
+  /**
+   * Returns field-level metadata for all fields.
+   * @return {Array<Object>} Array of field metadata objects.
+   */
+  getAllFieldMetadata() {
+    if (!this._metadata || !this._metadata.Fields || !this._metadata.Fields.QvdFieldHeader) {
+      return [];
+    }
+
+    let fields = this._metadata.Fields.QvdFieldHeader;
+    if (!Array.isArray(fields)) {
+      fields = [fields];
+    }
+
+    return fields.map((field) => ({
+      fieldName: field.FieldName,
+      bitOffset: field.BitOffset,
+      bitWidth: field.BitWidth,
+      bias: field.Bias,
+      noOfSymbols: field.NoOfSymbols,
+      offset: field.Offset,
+      length: field.Length,
+      comment: field.Comment,
+      numberFormat: field.NumberFormat,
+      tags: field.Tags,
+    }));
+  }
+
+  /**
+   * Sets modifiable file-level metadata. Immutable properties related to data storage are ignored.
+   * @param {Object} metadata Object containing metadata properties to update.
+   */
+  setFileMetadata(metadata) {
+    if (!this._metadata) {
+      // Initialize metadata structure if it doesn't exist
+      this._metadata = {
+        QvBuildNo: 50667,
+        CreatorDoc: '',
+        CreateUtcTime: '',
+        SourceCreateUtcTime: '',
+        SourceFileUtcTime: '',
+        SourceFileSize: -1,
+        StaleUtcTime: '',
+        TableName: '',
+        Fields: {
+          QvdFieldHeader: this._columns.map((column) => ({
+            FieldName: column,
+            BitOffset: 0,
+            BitWidth: 0,
+            Bias: 0,
+            NoOfSymbols: 0,
+            Offset: 0,
+            Length: 0,
+            Comment: '',
+            NumberFormat: {
+              Type: 'UNKNOWN',
+              nDec: '0',
+              UseThou: '0',
+              Fmt: '',
+              Dec: '',
+              Thou: '',
+            },
+            Tags: {},
+          })),
+        },
+        NoOfRecords: 0,
+        RecordByteSize: 0,
+        Offset: 0,
+        Length: 0,
+        Compression: '',
+        Comment: '',
+        EncryptionInfo: '',
+        TableTags: '',
+        ProfilingData: '',
+        Lineage: {},
+      };
+    }
+
+    // Only allow modification of certain fields (not Offset, Length, NoOfRecords, RecordByteSize)
+    const modifiableFields = [
+      'qvBuildNo',
+      'creatorDoc',
+      'createUtcTime',
+      'sourceCreateUtcTime',
+      'sourceFileUtcTime',
+      'sourceFileSize',
+      'staleUtcTime',
+      'tableName',
+      'compression',
+      'comment',
+      'encryptionInfo',
+      'tableTags',
+      'profilingData',
+      'lineage',
+    ];
+
+    // Map camelCase to XML property names
+    const fieldMapping = {
+      qvBuildNo: 'QvBuildNo',
+      creatorDoc: 'CreatorDoc',
+      createUtcTime: 'CreateUtcTime',
+      sourceCreateUtcTime: 'SourceCreateUtcTime',
+      sourceFileUtcTime: 'SourceFileUtcTime',
+      sourceFileSize: 'SourceFileSize',
+      staleUtcTime: 'StaleUtcTime',
+      tableName: 'TableName',
+      compression: 'Compression',
+      comment: 'Comment',
+      encryptionInfo: 'EncryptionInfo',
+      tableTags: 'TableTags',
+      profilingData: 'ProfilingData',
+      lineage: 'Lineage',
+    };
+
+    modifiableFields.forEach((field) => {
+      if (metadata[field] !== undefined) {
+        this._metadata[fieldMapping[field]] = metadata[field];
+      }
+    });
+  }
+
+  /**
+   * Sets modifiable field-level metadata for a specific field.
+   * Immutable properties related to data storage (Offset, Length, BitOffset, etc.) are ignored.
+   * @param {string} fieldName The name of the field.
+   * @param {Object} metadata Object containing field metadata properties to update.
+   */
+  setFieldMetadata(fieldName, metadata) {
+    if (!this._metadata || !this._metadata.Fields || !this._metadata.Fields.QvdFieldHeader) {
+      return;
+    }
+
+    let fields = this._metadata.Fields.QvdFieldHeader;
+    if (!Array.isArray(fields)) {
+      fields = [fields];
+      this._metadata.Fields.QvdFieldHeader = fields;
+    }
+
+    const fieldIndex = fields.findIndex((f) => f.FieldName === fieldName);
+    if (fieldIndex === -1) {
+      return;
+    }
+
+    // Only allow modification of Comment, NumberFormat, and Tags (not Offset, Length, BitOffset, etc.)
+    if (metadata.comment !== undefined) {
+      fields[fieldIndex].Comment = metadata.comment;
+    }
+    if (metadata.numberFormat !== undefined) {
+      fields[fieldIndex].NumberFormat = metadata.numberFormat;
+    }
+    if (metadata.tags !== undefined) {
+      fields[fieldIndex].Tags = metadata.tags;
+    }
+  }
+
+  /**
    * Returns the first n rows of the data frame.
    *
    * @param {number} n The number of rows to return.
    * @return {QvdDataFrame} The first n rows of the data frame.
    */
   head(n = 5) {
-    return new QvdDataFrame(this._data.slice(0, n), this._columns);
+    return new QvdDataFrame(this._data.slice(0, n), this._columns, this._metadata);
   }
 
   /**
@@ -232,7 +463,7 @@ export class QvdDataFrame {
    * @return {QvdDataFrame} The first n rows of the data frame.
    */
   tail(n = 5) {
-    return new QvdDataFrame(this._data.slice(-n), this._columns);
+    return new QvdDataFrame(this._data.slice(-n), this._columns, this._metadata);
   }
 
   /**
@@ -245,6 +476,7 @@ export class QvdDataFrame {
     return new QvdDataFrame(
       args.map((index) => this._data[index]),
       this._columns,
+      this._metadata,
     );
   }
 
@@ -269,7 +501,7 @@ export class QvdDataFrame {
     const indices = args.map((arg) => this._columns.indexOf(arg));
     const data = this._data.map((row) => indices.map((index) => row[index]));
     const columns = indices.map((index) => this._columns[index]);
-    return new QvdDataFrame(data, columns);
+    return new QvdDataFrame(data, columns, this._metadata);
   }
 
   /**
@@ -665,7 +897,10 @@ export class QvdFileReader {
     const columns = fields.map((field) => field['FieldName']);
     const data = this._indexTable.map((_, index) => getRow(index));
 
-    return new QvdDataFrame(data, columns);
+    // Pass the complete header metadata to the data frame
+    const metadata = this._header['QvdTableHeader'];
+
+    return new QvdDataFrame(data, columns, metadata);
   }
 }
 
@@ -714,19 +949,69 @@ export class QvdFileWriter {
    */
   _buildHeader() {
     const creationDate = new Date().toISOString().replace(/T/, ' ').replace(/\..+/, '');
+    const existingMetadata = this._df.metadata;
+
+    // Use existing metadata if available, otherwise create default values
+    const baseMetadata = existingMetadata
+      ? {
+          QvBuildNo: existingMetadata.QvBuildNo || 50667,
+          CreatorDoc: existingMetadata.CreatorDoc || crypto.randomUUID(),
+          CreateUtcTime: existingMetadata.CreateUtcTime || creationDate,
+          SourceCreateUtcTime: existingMetadata.SourceCreateUtcTime || '',
+          SourceFileUtcTime: existingMetadata.SourceFileUtcTime || '',
+          SourceFileSize: existingMetadata.SourceFileSize || -1,
+          StaleUtcTime: existingMetadata.StaleUtcTime || '',
+          TableName: existingMetadata.TableName || path.basename(this._path, path.extname(this._path)),
+          Compression: existingMetadata.Compression || '',
+          Comment: existingMetadata.Comment || '',
+          EncryptionInfo: existingMetadata.EncryptionInfo || '',
+          TableTags: existingMetadata.TableTags || '',
+          ProfilingData: existingMetadata.ProfilingData || '',
+          Lineage: existingMetadata.Lineage || {
+            LineageInfo: {
+              Discriminator: 'INLINE;',
+              Statement: '',
+            },
+          },
+        }
+      : {
+          QvBuildNo: 50667,
+          CreatorDoc: crypto.randomUUID(),
+          CreateUtcTime: creationDate,
+          SourceCreateUtcTime: '',
+          SourceFileUtcTime: '',
+          SourceFileSize: -1,
+          StaleUtcTime: '',
+          TableName: path.basename(this._path, path.extname(this._path)),
+          Compression: '',
+          Comment: '',
+          EncryptionInfo: '',
+          TableTags: '',
+          ProfilingData: '',
+          Lineage: {
+            LineageInfo: {
+              Discriminator: 'INLINE;',
+              Statement: '',
+            },
+          },
+        };
+
+    // Get existing field metadata if available
+    let existingFields = [];
+    if (existingMetadata && existingMetadata.Fields && existingMetadata.Fields.QvdFieldHeader) {
+      existingFields = Array.isArray(existingMetadata.Fields.QvdFieldHeader)
+        ? existingMetadata.Fields.QvdFieldHeader
+        : [existingMetadata.Fields.QvdFieldHeader];
+    }
 
     const xmlObject = {
       QvdTableHeader: {
-        QvBuildNo: 50667,
-        CreatorDoc: crypto.randomUUID(),
-        CreateUtcTime: creationDate,
-        SourceCreateUtcTime: '',
-        SourceFileUtcTime: '',
-        SourceFileSize: -1,
-        StaleUtcTime: '',
-        TableName: path.basename(this._path, path.extname(this._path)),
+        ...baseMetadata,
         Fields: {
           QvdFieldHeader: this._df.columns.map((column, index) => {
+            // Find existing field metadata for this column
+            const existingField = existingFields.find((f) => f.FieldName === column);
+
             return {
               FieldName: column,
               BitOffset: this._indexTableMetadata?.[index][0],
@@ -735,8 +1020,8 @@ export class QvdFileWriter {
               NoOfSymbols: this._symbolTable?.[index].length,
               Offset: this._symbolTableMetadata?.[index][0],
               Length: this._symbolTableMetadata?.[index][1],
-              Comment: '',
-              NumberFormat: {
+              Comment: existingField?.Comment || '',
+              NumberFormat: existingField?.NumberFormat || {
                 Type: 'UNKNOWN',
                 nDec: '0',
                 UseThou: '0',
@@ -744,7 +1029,7 @@ export class QvdFileWriter {
                 Dec: '',
                 Thou: '',
               },
-              Tags: {},
+              Tags: existingField?.Tags || {},
             };
           }),
         },
@@ -754,17 +1039,6 @@ export class QvdFileWriter {
           this._symbolTableMetadata?.[this._symbolTableMetadata.length - 1][0] +
           this._symbolTableMetadata?.[this._symbolTableMetadata.length - 1][1],
         Length: this._indexBuffer?.length,
-        Compression: '',
-        Comment: '',
-        EncryptionInfo: '',
-        TableTags: '',
-        ProfilingData: '',
-        Lineage: {
-          LineageInfo: {
-            Discriminator: 'INLINE;',
-            Statement: '',
-          },
-        },
       },
     };
 

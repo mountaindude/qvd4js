@@ -25,6 +25,10 @@ structure and vica versa. The library is written to be used in a Node.js environ
     - [`select(...args: string): QvdDataFrame`](#selectargs-string-qvddataframe)
     - [`toDict(): Promise<object>`](#todict-promiseobject)
     - [`toQvd(path: string): Promise<void>`](#toqvdpath-string-promisevoid)
+    - [`getFieldMetadata(fieldName: string): object | null`](#getfieldmetadatafieldname-string-object--null)
+    - [`getAllFieldMetadata(): object[]`](#getallfieldmetadata-object)
+    - [`setFileMetadata(metadata: object): void`](#setfilemetadatametadata-object-void)
+    - [`setFieldMetadata(fieldName: string, metadata: object): void`](#setfieldmetadatafieldname-string-metadata-object-void)
 - [License](#license)
   - [Forbidden](#forbidden)
 
@@ -54,6 +58,48 @@ console.log(df.head(5));
 
 The above example loads the _qvd4js_ library and parses an example QVD file. A QVD file is typically loaded using the static
 `QvdDataFrame.fromQvd` function of the `QvdDataFrame` class itself. After loading the file's content, numerous methods and properties are available to work with the parsed data.
+
+### Working with Metadata
+
+The library provides full access to QVD file and field metadata:
+
+```javascript
+import {QvdDataFrame} from 'qvd4js';
+
+// Load QVD file
+const df = await QvdDataFrame.fromQvd('path/to/file.qvd');
+
+// Access file-level metadata
+console.log(df.fileMetadata.tableName);
+console.log(df.fileMetadata.createUtcTime);
+console.log(df.fileMetadata.noOfRecords);
+
+// Access field-level metadata
+const fieldMeta = df.getFieldMetadata('ProductKey');
+console.log(fieldMeta.comment);
+console.log(fieldMeta.numberFormat);
+console.log(fieldMeta.tags);
+
+// Get all field metadata
+const allFields = df.getAllFieldMetadata();
+allFields.forEach(field => {
+  console.log(`${field.fieldName}: ${field.noOfSymbols} symbols`);
+});
+
+// Modify metadata (only modifiable properties can be changed)
+df.setFileMetadata({
+  tableName: 'UpdatedProducts',
+  comment: 'Modified product data',
+});
+
+df.setFieldMetadata('ProductKey', {
+  comment: 'Primary key for products',
+  tags: {String: ['$key', '$numeric']},
+});
+
+// Metadata is preserved when writing
+await df.toQvd('path/to/output.qvd');
+```
 
 ## QVD File Format
 
@@ -100,11 +146,13 @@ data record, but only the indices that point to the values in the symbol table.
 The `QvdDataFrame` class represents the data frame stored inside of a finally parsed QVD file. It provides a high-level
 abstraction access to the QVD file content. This includes meta information as well as access to the actual data records.
 
-| Property  | Type       | Description                                                                                                        |
-| --------- | ---------- | ------------------------------------------------------------------------------------------------------------------ |
-| `shape`   | `number[]` | The shape of the data table. The first element is the number of rows, the second element is the number of columns. |
-| `data`    | `any[][]`  | The actual data records of the QVD file. The first dimension represents the single rows.                           |
-| `columns` | `string[]` | The names of the fields that are contained in the QVD file.                                                        |
+| Property       | Type       | Description                                                                                                        |
+| -------------- | ---------- | ------------------------------------------------------------------------------------------------------------------ |
+| `shape`        | `number[]` | The shape of the data table. The first element is the number of rows, the second element is the number of columns. |
+| `data`         | `any[][]`  | The actual data records of the QVD file. The first dimension represents the single rows.                           |
+| `columns`      | `string[]` | The names of the fields that are contained in the QVD file.                                                        |
+| `metadata`     | `object`   | The complete metadata object from the QVD file header, or null if not loaded from a QVD file.                      |
+| `fileMetadata` | `object`   | File-level metadata from the QVD header (qvBuildNo, tableName, createUtcTime, etc.).                              |
 
 #### `static fromQvd(path: string): Promise<QvdDataFrame>`
 
@@ -148,6 +196,71 @@ The order of the values in the inner arrays corresponds to the order of the fiel
 #### `toQvd(path: string): Promise<void>`
 
 The method `toQvd` writes the data frame to a QVD file at the specified path.
+
+#### `getFieldMetadata(fieldName: string): object | null`
+
+The method `getFieldMetadata` returns the metadata for a specific field/column from the QVD header. Returns null if the field is not found or metadata is not available.
+
+The returned object contains:
+- `fieldName`: Name of the field
+- `bitOffset`: Bit offset in the index table
+- `bitWidth`: Bit width in the index table  
+- `bias`: Bias value for index calculation
+- `noOfSymbols`: Number of unique symbols/values
+- `offset`: Byte offset in the symbol table
+- `length`: Byte length in the symbol table
+- `comment`: Field comment (modifiable)
+- `numberFormat`: Number format settings (modifiable)
+- `tags`: Field tags (modifiable)
+
+Note: Properties like `offset`, `length`, `bitOffset`, `bitWidth`, `bias`, and `noOfSymbols` are immutable and relate to internal data storage.
+
+#### `getAllFieldMetadata(): object[]`
+
+The method `getAllFieldMetadata` returns an array of metadata objects for all fields in the data frame. Each object has the same structure as returned by `getFieldMetadata`.
+
+#### `setFileMetadata(metadata: object): void`
+
+The method `setFileMetadata` allows modifying file-level metadata. Only modifiable properties are updated; immutable properties related to data storage are ignored.
+
+Modifiable properties:
+- `qvBuildNo`: QlikView build number
+- `creatorDoc`: Document GUID that created the QVD
+- `createUtcTime`: Creation timestamp
+- `sourceCreateUtcTime`: Source creation timestamp
+- `sourceFileUtcTime`: Source file timestamp
+- `sourceFileSize`: Source file size
+- `staleUtcTime`: Stale timestamp
+- `tableName`: Table name
+- `compression`: Compression method
+- `comment`: Table comment
+- `encryptionInfo`: Encryption information
+- `tableTags`: Table tags
+- `profilingData`: Profiling data
+- `lineage`: Data lineage information
+
+Immutable properties (cannot be modified):
+- `noOfRecords`: Number of records
+- `recordByteSize`: Record byte size
+- `offset`: Byte offset in file
+- `length`: Byte length in file
+
+#### `setFieldMetadata(fieldName: string, metadata: object): void`
+
+The method `setFieldMetadata` allows modifying field-level metadata for a specific field. Only modifiable properties are updated; immutable properties related to data storage are ignored.
+
+Modifiable properties:
+- `comment`: Field comment/description
+- `numberFormat`: Number format settings (Type, nDec, UseThou, Fmt, Dec, Thou)
+- `tags`: Field tags (typically used for field classification)
+
+Immutable properties (cannot be modified):
+- `offset`: Byte offset in symbol table
+- `length`: Byte length in symbol table
+- `bitOffset`: Bit offset in index table
+- `bitWidth`: Bit width in index table
+- `bias`: Bias value
+- `noOfSymbols`: Number of symbols
 
 ## License
 
