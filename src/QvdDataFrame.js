@@ -3,6 +3,58 @@
 import assert from 'assert';
 
 /**
+ * @typedef {Object} QvdNumberFormat
+ * @property {string} Type - Number format type
+ * @property {string} nDec - Number of decimals
+ * @property {string} UseThou - Use thousands separator
+ * @property {string} Fmt - Format string
+ * @property {string} Dec - Decimal separator
+ * @property {string} Thou - Thousands separator
+ */
+
+/**
+ * @typedef {Object} QvdFieldHeader
+ * @property {string} FieldName - The name of the field
+ * @property {string|number} [BitOffset] - The bit offset
+ * @property {string|number} [BitWidth] - The bit width
+ * @property {string|number} [Bias] - The bias value
+ * @property {string|number} [NoOfSymbols] - Number of symbols
+ * @property {string|number} [Offset] - The offset
+ * @property {string|number} [Length] - The length
+ * @property {string} [Comment] - Field comment
+ * @property {QvdNumberFormat|string} [NumberFormat] - Number format
+ * @property {Object|string} [Tags] - Field tags
+ */
+
+/**
+ * @typedef {Object} QvdFields
+ * @property {QvdFieldHeader|QvdFieldHeader[]} QvdFieldHeader - Field header(s)
+ */
+
+/**
+ * @typedef {Object} QvdMetadata
+ * @property {string|number} [QvBuildNo] - QlikView build number
+ * @property {string} [CreatorDoc] - Creator document
+ * @property {string} [CreateUtcTime] - Creation UTC time
+ * @property {string} [SourceCreateUtcTime] - Source creation UTC time
+ * @property {string} [SourceFileUtcTime] - Source file UTC time
+ * @property {string|number} [SourceFileSize] - Source file size
+ * @property {string} [StaleUtcTime] - Stale UTC time
+ * @property {string} [TableName] - Table name
+ * @property {string|number} [NoOfRecords] - Number of records
+ * @property {string|number} [RecordByteSize] - Record byte size
+ * @property {string|number} [Offset] - Offset
+ * @property {string|number} [Length] - Length
+ * @property {string} [Compression] - Compression type
+ * @property {string} [Comment] - Comment
+ * @property {string} [EncryptionInfo] - Encryption info
+ * @property {string} [TableTags] - Table tags
+ * @property {string} [ProfilingData] - Profiling data
+ * @property {Object|string} [Lineage] - Lineage
+ * @property {QvdFields} [Fields] - Fields information
+ */
+
+/**
  * Represents a loaded QVD file.
  */
 export class QvdDataFrame {
@@ -10,7 +62,7 @@ export class QvdDataFrame {
    * Represents the data frame stored inside a QVD file.
    * @param {Array<Array<any>>} data The data of the data frame.
    * @param {Array<string>} columns The columns of the data frame.
-   * @param {Object|null} metadata The metadata from the QVD file header (optional).
+   * @param {QvdMetadata|null} metadata The metadata from the QVD file header (optional).
    */
   constructor(data, columns, metadata = null) {
     this._data = data;
@@ -142,8 +194,26 @@ export class QvdDataFrame {
   }
 
   /**
+   * @typedef {Object} FileMetadataUpdate
+   * @property {string|number} [qvBuildNo] - QlikView build number
+   * @property {string} [creatorDoc] - Creator document
+   * @property {string} [createUtcTime] - Creation UTC time
+   * @property {string} [sourceCreateUtcTime] - Source creation UTC time
+   * @property {string} [sourceFileUtcTime] - Source file UTC time
+   * @property {string|number} [sourceFileSize] - Source file size
+   * @property {string} [staleUtcTime] - Stale UTC time
+   * @property {string} [tableName] - Table name
+   * @property {string} [compression] - Compression type
+   * @property {string} [comment] - Comment
+   * @property {string} [encryptionInfo] - Encryption info
+   * @property {string} [tableTags] - Table tags
+   * @property {string} [profilingData] - Profiling data
+   * @property {Object|string} [lineage] - Lineage
+   */
+
+  /**
    * Sets modifiable file-level metadata. Immutable properties related to data storage are ignored.
-   * @param {Object} metadata Object containing metadata properties to update.
+   * @param {FileMetadataUpdate} metadata Object containing metadata properties to update.
    */
   setFileMetadata(metadata) {
     if (!this._metadata) {
@@ -228,17 +298,26 @@ export class QvdDataFrame {
     };
 
     modifiableFields.forEach((field) => {
+      // @ts-ignore - Dynamic property access for metadata mapping
       if (metadata[field] !== undefined) {
+        // @ts-ignore - Dynamic property access for metadata mapping
         this._metadata[fieldMapping[field]] = metadata[field];
       }
     });
   }
 
   /**
+   * @typedef {Object} FieldMetadataUpdate
+   * @property {string} [comment] - Field comment
+   * @property {QvdNumberFormat|string} [numberFormat] - Number format
+   * @property {Object|string} [tags] - Field tags
+   */
+
+  /**
    * Sets modifiable field-level metadata for a specific field.
    * Immutable properties related to data storage (Offset, Length, BitOffset, etc.) are ignored.
    * @param {string} fieldName The name of the field.
-   * @param {Object} metadata Object containing field metadata properties to update.
+   * @param {FieldMetadataUpdate} metadata Object containing field metadata properties to update.
    */
   setFieldMetadata(fieldName, metadata) {
     if (!this._metadata || !this._metadata.Fields || !this._metadata.Fields.QvdFieldHeader) {

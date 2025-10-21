@@ -74,29 +74,37 @@ export class QvdSymbol {
       const intBuffer = Buffer.alloc(4);
       intBuffer.writeInt32LE(this._intValue);
 
+      // @ts-ignore - Buffer.concat type compatibility
       const stringBuffer = Buffer.concat([Buffer.from(this._stringValue, 'utf-8'), Buffer.from([0])]);
 
+      // @ts-ignore - Buffer.concat type compatibility
       return Buffer.concat([Buffer.from([5]), intBuffer, stringBuffer]);
     } else if (this._doubleValue && this._stringValue) {
       const floatBuffer = Buffer.alloc(8);
       floatBuffer.writeDoubleLE(this._doubleValue);
 
+      // @ts-ignore - Buffer.concat type compatibility
       const stringBuffer = Buffer.concat([Buffer.from(this._stringValue, 'utf-8'), Buffer.from([0])]);
 
+      // @ts-ignore - Buffer.concat type compatibility
       return Buffer.concat([Buffer.from([6]), floatBuffer, stringBuffer]);
     } else if (this._intValue) {
       const buffer = Buffer.alloc(4);
       buffer.writeInt32LE(this._intValue);
 
+      // @ts-ignore - Buffer.concat type compatibility
       return Buffer.concat([Buffer.from([1]), buffer]);
     } else if (this._doubleValue) {
       const buffer = Buffer.alloc(8);
       buffer.writeDoubleLE(this._doubleValue);
 
+      // @ts-ignore - Buffer.concat type compatibility
       return Buffer.concat([Buffer.from([2]), buffer]);
     } else if (this._stringValue) {
+      // @ts-ignore - Buffer.concat type compatibility
       const buffer = Buffer.concat([Buffer.from(this._stringValue, 'utf-8'), Buffer.from([0])]);
 
+      // @ts-ignore - Buffer.concat type compatibility
       return Buffer.concat([Buffer.from([4]), buffer]);
     } else {
       throw new Error('The symbol does not contain any value.');

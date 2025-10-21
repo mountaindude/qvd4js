@@ -22,7 +22,9 @@ export class QvdFileReader {
     this._symbolTableOffset = null;
     this._indexTableOffset = null;
     this._header = null;
+    /** @type {Array<Array<import('./QvdSymbol.js').QvdSymbol>>|null} */
     this._symbolTable = null;
+    /** @type {Array<Array<number>>|null} */
     this._indexTable = null;
   }
 
@@ -136,7 +138,7 @@ export class QvdFileReader {
      */
 
     // Parse all possible symbols of each field/column
-    this._symbolTable = fields.map((field) => {
+    this._symbolTable = fields.map((/** @type {any} */ field) => {
       const symbolsOffset = parseInt(field['Offset'], 10); // Offset of the column's symbol area in the symbol table
       const symbolsLength = parseInt(field['Length'], 10); // Length of the column's symbol area in the symbol table
 
@@ -188,7 +190,8 @@ export class QvdFileReader {
 
             pointer += 4;
 
-            let stringByteData = [];
+            /** @type {number[]} */
+            const stringByteData = [];
 
             while (symbolBuffer[pointer] !== 0) {
               stringByteData.push(symbolBuffer[pointer++]);
@@ -207,7 +210,8 @@ export class QvdFileReader {
 
             pointer += 8;
 
-            let stringByteData = [];
+            /** @type {number[]} */
+            const stringByteData = [];
 
             while (symbolBuffer[pointer] !== 0) {
               stringByteData.push(symbolBuffer[pointer++]);
@@ -225,13 +229,14 @@ export class QvdFileReader {
       }
 
       return symbols;
+      // @ts-ignore - Symbol table type assignment
     });
   }
 
   /**
    * Utility method to convert a bit array to an integer value.
    *
-   * @param {Array} bits The bit array
+   * @param {Array<number>} bits The bit array
    * @return {Number} The integer value
    */
   _convertBitsToInt32(bits) {
@@ -279,10 +284,11 @@ export class QvdFileReader {
         .reverse()
         .map((bit) => parseInt(bit));
 
+      /** @type {number[]} */
       const symbolIndices = [];
 
       // Extract the index from the current row's bit mask for each field/column
-      fields.forEach((field) => {
+      fields.forEach((/** @type {any} */ field) => {
         const bitOffset = parseInt(field['BitOffset'], 10);
         const bitWidth = parseInt(field['BitWidth'], 10);
         const bias = parseInt(field['Bias'], 10);
@@ -330,13 +336,13 @@ export class QvdFileReader {
         throw new Error('Index is out of bounds');
       }
 
-      return this._indexTable?.[index].map((symbolIndex, fieldIndex) => {
+      return this._indexTable?.[index].map((/** @type {number} */ symbolIndex, /** @type {number} */ fieldIndex) => {
         if (symbolIndex < 0) {
           return null;
         }
 
-        const symbol = this._symbolTable[fieldIndex][symbolIndex];
-        const value = symbol.toPrimaryValue();
+        const symbol = this._symbolTable?.[fieldIndex]?.[symbolIndex];
+        const value = symbol?.toPrimaryValue();
 
         if (typeof value === 'string') {
           if (!isNaN(Number(value))) {
@@ -354,7 +360,7 @@ export class QvdFileReader {
       fields = [fields];
     }
 
-    const columns = fields.map((field) => field['FieldName']);
+    const columns = fields.map((/** @type {any} */ field) => field['FieldName']);
     const data = this._indexTable.map((_, index) => getRow(index));
 
     // Pass the complete header metadata to the data frame

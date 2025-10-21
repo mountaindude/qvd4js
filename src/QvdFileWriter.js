@@ -8,6 +8,10 @@ import assert from 'assert';
 import {QvdSymbol} from './QvdSymbol.js';
 
 /**
+ * @typedef {import('./QvdDataFrame.js').QvdDataFrame} QvdDataFrame
+ */
+
+/**
  * Persists a QVD file to disk.
  */
 export class QvdFileWriter {
@@ -22,10 +26,14 @@ export class QvdFileWriter {
     this._df = df;
     this._header = null;
     this._symbolBuffer = null;
+    /** @type {Array<Array<import('./QvdSymbol.js').QvdSymbol>>|null} */
     this._symbolTable = null;
+    /** @type {Array<any>|null} */
     this._symbolTableMetadata = null;
     this._indexBuffer = null;
+    /** @type {Array<any>|null} */
     this._indexTable = null;
+    /** @type {Array<any>|null} */
     this._indexTableMetadata = null;
     this._recordByteSize = null;
   }
@@ -38,11 +46,15 @@ export class QvdFileWriter {
     assert(this._symbolBuffer, 'The QVD file symbol table has not been parsed.');
     assert(this._indexBuffer, 'The QVD file index table has not been parsed.');
 
+    // @ts-ignore - Buffer.concat type compatibility
     const headerBuffer = Buffer.concat([Buffer.from(this._header, 'utf-8'), Buffer.from([0])]);
 
     const fd = fs.openSync(this._path, 'w');
+    // @ts-ignore - Buffer type compatibility
     fs.writeSync(fd, headerBuffer, 0, headerBuffer.length, 0);
+    // @ts-ignore - Buffer type compatibility
     fs.writeSync(fd, this._symbolBuffer, 0, this._symbolBuffer.length, headerBuffer.length);
+    // @ts-ignore - Buffer type compatibility
     fs.writeSync(fd, this._indexBuffer, 0, this._indexBuffer.length, headerBuffer.length + this._symbolBuffer.length);
     fs.closeSync(fd);
   }
@@ -52,6 +64,7 @@ export class QvdFileWriter {
    */
   _buildHeader() {
     const creationDate = new Date().toISOString().replace(/T/, ' ').replace(/\..+/, '');
+    /** @type {import('./QvdDataFrame.js').QvdMetadata|null} */
     const existingMetadata = this._df.metadata;
 
     // Use existing metadata if available, otherwise create default values
@@ -100,6 +113,7 @@ export class QvdFileWriter {
         };
 
     // Get existing field metadata if available
+    /** @type {any[]} */
     let existingFields = [];
     if (existingMetadata && existingMetadata.Fields && existingMetadata.Fields.QvdFieldHeader) {
       existingFields = Array.isArray(existingMetadata.Fields.QvdFieldHeader)
@@ -111,9 +125,9 @@ export class QvdFileWriter {
       QvdTableHeader: {
         ...baseMetadata,
         Fields: {
-          QvdFieldHeader: this._df.columns.map((column, index) => {
+          QvdFieldHeader: this._df.columns.map((/** @type {any} */ column, /** @type {number} */ index) => {
             // Find existing field metadata for this column
-            const existingField = existingFields.find((f) => f.FieldName === column);
+            const existingField = existingFields.find((/** @type {any} */ f) => f.FieldName === column);
 
             return {
               FieldName: column,
@@ -180,6 +194,7 @@ export class QvdFileWriter {
       const symbolsOffset = this._symbolBuffer.length - symbolsLength;
 
       this._symbolTableMetadata?.push([symbolsOffset, symbolsLength, containsNull]);
+      // @ts-ignore - Symbol array type compatibility
       this._symbolTable?.push(symbols);
     });
   }
@@ -192,9 +207,9 @@ export class QvdFileWriter {
     this._indexTableMetadata = [];
     this._indexBuffer = Buffer.alloc(0);
 
-    this._df.data.forEach((row) => {
+    this._df.data.forEach((/** @type {any} */ row) => {
       // Convert the raw values to indices referring to the symbol table
-      let indices = this._df.columns.map((column) => {
+      const indices = this._df.columns.map((/** @type {any} */ column) => {
         const value = row[this._df.columns.indexOf(column)];
         const symbol = QvdFileWriter._convertRawToSymbol(value);
         const fieldContainsNull = this._symbolTableMetadata?.[this._df.columns.indexOf(column)][2];
@@ -203,21 +218,25 @@ export class QvdFileWriter {
         if (symbol === null) {
           return 0;
         } else {
-          const symbolIndex = this._symbolTable?.[this._df.columns.indexOf(column)].findIndex((s) => s.equals(symbol));
+          const symbolIndex = this._symbolTable?.[this._df.columns.indexOf(column)].findIndex((/** @type {any} */ s) =>
+            s.equals(symbol),
+          );
           // In order to represent None values, the indices are shifted by the bias value of the column
-          return fieldContainsNull ? symbolIndex + 2 : symbolIndex;
+          return fieldContainsNull ? (symbolIndex ?? 0) + 2 : symbolIndex ?? 0;
         }
       });
 
       // Convert the integer indices to binary representation
-      indices = indices.map((index) => {
+      /** @type {string[]} */
+      const stringIndices = indices.map((/** @type {number} */ index) => {
         const bits = QvdFileWriter._convertInt32ToBits(index, 32);
         let bitString = bits.join('');
         bitString = bitString.replace(/^0+/, '') || '0';
         return bitString;
       });
 
-      this._indexTable?.push(indices);
+      // @ts-ignore - Index array type compatibility
+      this._indexTable?.push(stringIndices);
     });
 
     // Normalize the bit representation of the indices by padding with zeros
@@ -248,7 +267,9 @@ export class QvdFileWriter {
     });
 
     // Concatenate the bit representation of the indices of each row to a single binary string per row
+    // @ts-ignore - Buffer.concat type compatibility
     this._indexBuffer = Buffer.concat(
+      // @ts-ignore - Buffer array type compatibility
       this._indexTable.map((/** @type{string[]} */ indices) => {
         indices.reverse();
         const bits = indices.join('');
