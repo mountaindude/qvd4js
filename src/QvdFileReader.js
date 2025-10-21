@@ -268,8 +268,10 @@ export class QvdFileReader {
   /**
    * Parses the bit stuffed index table of the QVD file. This method is part of the parsing process
    * and should not be called directly.
+   *
+   * @param {number|null} maxRows The maximum number of rows to parse. If null, all rows are parsed.
    */
-  async _parseIndexTable() {
+  async _parseIndexTable(maxRows = null) {
     if (!this._buffer || !this._header || !this._indexTableOffset) {
       throw new QvdCorruptedError('The QVD file has not been loaded in the proper order or has not been loaded at all.', {
         file: this._path,
@@ -286,6 +288,9 @@ export class QvdFileReader {
     // Size of a single row of the index table in bytes
     const recordSize = parseInt(this._header['QvdTableHeader']['RecordByteSize'], 10);
 
+    const totalRows = parseInt(this._header['QvdTableHeader']['NoOfRecords'], 10);
+    const rowsToLoad = maxRows !== null ? Math.min(maxRows, totalRows) : totalRows;
+
     const indexBuffer = this._buffer.subarray(
       this._indexTableOffset,
       this._indexTableOffset + parseInt(this._header['QvdTableHeader']['Length'], 10) + 1,
@@ -293,8 +298,8 @@ export class QvdFileReader {
 
     this._indexTable = [];
 
-    // Parse all rows of the index table, each row contains the indices of the symbol table for each field/column
-    for (let pointer = 0; pointer < indexBuffer.length; pointer += recordSize) {
+    // Parse rows of the index table, each row contains the indices of the symbol table for each field/column
+    for (let pointer = 0, rowCount = 0; pointer < indexBuffer.length && rowCount < rowsToLoad; pointer += recordSize, rowCount++) {
       const bytes = new Int32Array(indexBuffer.subarray(pointer, pointer + recordSize));
       bytes.reverse();
 
@@ -333,13 +338,14 @@ export class QvdFileReader {
   /**
    * Loads the QVD file into memory and parses it.
    *
+   * @param {number|null} maxRows The maximum number of rows to load. If null, all rows are loaded.
    * @return {Promise<QvdDataFrame>} The loaded QVD file.
    */
-  async load() {
+  async load(maxRows = null) {
     await this._readData();
     await this._parseHeader();
     await this._parseSymbolTable();
-    await this._parseIndexTable();
+    await this._parseIndexTable(maxRows);
 
     assert(this._header, 'The QVD file header has not been parsed.');
     assert(this._symbolTable, 'The QVD file symbol table has not been parsed.');

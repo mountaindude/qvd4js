@@ -62,6 +62,23 @@ console.log(df.head(5));
 The above example loads the _qvd4js_ library and parses an example QVD file. A QVD file is typically loaded using the static
 `QvdDataFrame.fromQvd` function of the `QvdDataFrame` class itself. After loading the file's content, numerous methods and properties are available to work with the parsed data.
 
+### Lazy Loading
+
+For large QVD files, you can load only a specific number of rows to improve performance:
+
+```javascript
+import {QvdDataFrame} from 'qvd4js';
+
+// Load only the first 1000 rows
+const df = await QvdDataFrame.fromQvd('path/to/file.qvd', {maxRows: 1000});
+console.log(df.shape); // [1000, numberOfColumns]
+```
+
+This is particularly useful for:
+- Previewing data from very large QVD files
+- Reducing memory consumption
+- Faster loading times when you only need a subset of the data
+
 ### Working with Metadata
 
 The library provides full access to QVD file and field metadata:
@@ -157,10 +174,24 @@ abstraction access to the QVD file content. This includes meta information as we
 | `metadata`     | `object`   | The complete metadata object from the QVD file header, or null if not loaded from a QVD file.                      |
 | `fileMetadata` | `object`   | File-level metadata from the QVD header (qvBuildNo, tableName, createUtcTime, etc.).                               |
 
-#### `static fromQvd(path: string): Promise<QvdDataFrame>`
+#### `static fromQvd(path: string, options?: object): Promise<QvdDataFrame>`
 
 The static method `QvdDataFrame.fromQvd` loads a QVD file from the given path and parses it. The method returns a promise that resolves
 to a `QvdDataFrame` instance.
+
+**Parameters:**
+- `path` (string): The path to the QVD file.
+- `options` (object, optional): Loading options
+  - `maxRows` (number, optional): Maximum number of rows to load. If not specified, all rows are loaded. This is useful for loading only a subset of data from large QVD files to improve performance and reduce memory usage.
+
+**Example:**
+```javascript
+// Load all rows (default behavior)
+const df = await QvdDataFrame.fromQvd('path/to/file.qvd');
+
+// Load only the first 1000 rows
+const dfLazy = await QvdDataFrame.fromQvd('path/to/file.qvd', {maxRows: 1000});
+```
 
 #### `static fromDict(dict: object): Promise<QvdDataFrame>`
 

@@ -488,11 +488,13 @@ export class QvdDataFrame {
    * Loads a QVD file and returns its data frame.
    *
    * @param {string} path The path to the QVD file.
+   * @param {Object} [options] Optional loading options.
+   * @param {number|null} [options.maxRows] The maximum number of rows to load. If not specified, all rows are loaded.
    * @return {Promise<QvdDataFrame>} The data frame of the QVD file.
    */
-  static async fromQvd(path) {
+  static async fromQvd(path, options = {}) {
     const {QvdFileReader} = await import('./QvdFileReader.js');
-    return await new QvdFileReader(path).load();
+    return await new QvdFileReader(path).load(options.maxRows !== undefined ? options.maxRows : null);
   }
 
   /**
