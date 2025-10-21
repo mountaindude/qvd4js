@@ -25,7 +25,7 @@
     "qvd",
     "qlik",
     "qlik sense",
-    "qlik view"
+    "qlikview"
   ],
   "license": "MIT",
   "devDependencies": {
