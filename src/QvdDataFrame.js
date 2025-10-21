@@ -1,6 +1,7 @@
 // @ts-check
 
 import assert from 'assert';
+import {QvdValidationError} from './QvdErrors.js';
 
 /**
  * @typedef {Object} QvdNumberFormat
@@ -442,8 +443,16 @@ export class QvdDataFrame {
    * @return {Promise<QvdDataFrame>} The constructed data frame.
    */
   static async fromDict(data) {
-    assert(data.columns, 'The dictionary to construct the data frame from does not contain any columns.');
-    assert(data.data, 'The dictionary to construct the data frame from does not contain any data.');
+    if (!data.columns) {
+      throw new QvdValidationError('The dictionary to construct the data frame from does not contain any columns.', {
+        data: data,
+      });
+    }
+    if (!data.data) {
+      throw new QvdValidationError('The dictionary to construct the data frame from does not contain any data.', {
+        data: data,
+      });
+    }
 
     return new QvdDataFrame(data.data, data.columns);
   }

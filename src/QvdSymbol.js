@@ -1,5 +1,7 @@
 // @ts-check
 
+import {QvdValidationError} from './QvdErrors.js';
+
 /**
  * Represents a Qlik symbol/value, stored in a QVD file.
  */
@@ -107,7 +109,11 @@ export class QvdSymbol {
       // @ts-ignore - Buffer.concat type compatibility
       return Buffer.concat([Buffer.from([4]), buffer]);
     } else {
-      throw new Error('The symbol does not contain any value.');
+      throw new QvdValidationError('The symbol does not contain any value.', {
+        intValue: this._intValue,
+        doubleValue: this._doubleValue,
+        stringValue: this._stringValue,
+      });
     }
   }
 
