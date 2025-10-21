@@ -9,7 +9,7 @@
   "scripts": {
     "build": "babel ./src --out-dir ./dist",
     "lint": "eslint .",
-    "test": "jest .",
+    "test": "jest . --coverage",
     "clean": "rimraf -rf dist"
   },
   "author": {

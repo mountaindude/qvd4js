@@ -1,5 +1,12 @@
 module.exports = {
-  collectCoverageFrom: ['**/*.{js,jsx,ts,tsx}', '!**/*.d.ts', '!**/node_modules/**'],
+  collectCoverageFrom: [
+    '**/*.{js,jsx,ts,tsx}',
+    '!**/*.d.ts',
+    '!**/node_modules/**',
+    '!**/dist/**',
+    '!**/coverage/**',
+    '!jest.config.js',
+  ],
   testPathIgnorePatterns: ['<rootDir>/node_modules/'],
   transform: {
     // Use babel-jest to transpile tests with the next/babel preset
