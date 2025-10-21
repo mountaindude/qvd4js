@@ -31,6 +31,7 @@ structure and vica versa. The library is written to be used in a Node.js environ
       - [`getAllFieldMetadata(): object[]`](#getallfieldmetadata-object)
       - [`setFileMetadata(metadata: object): void`](#setfilemetadatametadata-object-void)
       - [`setFieldMetadata(fieldName: string, metadata: object): void`](#setfieldmetadatafieldname-string-metadata-object-void)
+  - [Contributors](#contributors)
   - [License](#license)
     - [Forbidden](#forbidden)
 
@@ -268,6 +269,11 @@ Immutable properties (cannot be modified):
 - `bitWidth`: Bit width in index table
 - `bias`: Bias value
 - `noOfSymbols`: Number of symbols
+
+## Contributors
+
+- [Constantin Müller](https://mueller-constantin.de) - Original author
+- [Göran Sander](https://github.com/mountaindude) - General refresh, improved error handling, expose all metadata from XML headers, lazy loading of symbol and index tables, TypeScript typings, security hardening, bug fixes
 
 ## License
 
