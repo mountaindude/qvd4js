@@ -188,6 +188,8 @@ export class QvdFileReader {
      *  }
      */
 
+    // Note: xml2js (via sax-js) does not support external entity resolution
+    // by default, providing inherent protection against XXE attacks.
     this._header = await xml.parseStringPromise(headerBuffer.toString(), {explicitArray: false});
 
     if (!this._header) {
