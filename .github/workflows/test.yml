@@ -86,7 +86,7 @@ jobs:
           path: |
             coverage/
             test-results/
-          retention-days: 30
+          retention-days: 3
 
   test:
     name: Test - ${{ matrix.platform }} - Node ${{ matrix.node }}
@@ -421,11 +421,8 @@ jobs:
       contents: write
       deployments: write
     steps:
-      - name: Checkout gh-pages branch
+      - name: Checkout code
         uses: actions/checkout@v4
-        with:
-          ref: gh-pages
-          fetch-depth: 0
 
       - name: Download all benchmark artifacts
         uses: actions/download-artifact@v4
@@ -455,6 +452,7 @@ jobs:
           output-file-path: benchmark-artifacts/benchmark-Linux-node22.x/benchmark-results.json
           github-token: ${{ secrets.GITHUB_TOKEN }}
           auto-push: false
+          skip-fetch-gh-pages: true
           gh-pages-branch: gh-pages
           benchmark-data-dir-path: benchmarks/Linux-node22.x
           alert-threshold: '150%'
@@ -469,6 +467,7 @@ jobs:
           output-file-path: benchmark-artifacts/benchmark-Linux-node24.x/benchmark-results.json
           github-token: ${{ secrets.GITHUB_TOKEN }}
           auto-push: false
+          skip-fetch-gh-pages: true
           gh-pages-branch: gh-pages
           benchmark-data-dir-path: benchmarks/Linux-node24.x
           alert-threshold: '150%'
@@ -483,6 +482,7 @@ jobs:
           output-file-path: benchmark-artifacts/benchmark-Windows-node20.x/benchmark-results.json
           github-token: ${{ secrets.GITHUB_TOKEN }}
           auto-push: false
+          skip-fetch-gh-pages: true
           gh-pages-branch: gh-pages
           benchmark-data-dir-path: benchmarks/Windows-node20.x
           alert-threshold: '150%'
@@ -497,6 +497,7 @@ jobs:
           output-file-path: benchmark-artifacts/benchmark-Windows-node22.x/benchmark-results.json
           github-token: ${{ secrets.GITHUB_TOKEN }}
           auto-push: false
+          skip-fetch-gh-pages: true
           gh-pages-branch: gh-pages
           benchmark-data-dir-path: benchmarks/Windows-node22.x
           alert-threshold: '150%'
@@ -511,6 +512,7 @@ jobs:
           output-file-path: benchmark-artifacts/benchmark-Windows-node24.x/benchmark-results.json
           github-token: ${{ secrets.GITHUB_TOKEN }}
           auto-push: false
+          skip-fetch-gh-pages: true
           gh-pages-branch: gh-pages
           benchmark-data-dir-path: benchmarks/Windows-node24.x
           alert-threshold: '150%'
@@ -525,6 +527,7 @@ jobs:
           output-file-path: benchmark-artifacts/benchmark-macOS-Intel-node20.x/benchmark-results.json
           github-token: ${{ secrets.GITHUB_TOKEN }}
           auto-push: false
+          skip-fetch-gh-pages: true
           gh-pages-branch: gh-pages
           benchmark-data-dir-path: benchmarks/macOS-Intel-node20.x
           alert-threshold: '150%'
@@ -539,6 +542,7 @@ jobs:
           output-file-path: benchmark-artifacts/benchmark-macOS-Intel-node22.x/benchmark-results.json
           github-token: ${{ secrets.GITHUB_TOKEN }}
           auto-push: false
+          skip-fetch-gh-pages: true
           gh-pages-branch: gh-pages
           benchmark-data-dir-path: benchmarks/macOS-Intel-node22.x
           alert-threshold: '150%'
@@ -553,6 +557,7 @@ jobs:
           output-file-path: benchmark-artifacts/benchmark-macOS-Intel-node24.x/benchmark-results.json
           github-token: ${{ secrets.GITHUB_TOKEN }}
           auto-push: false
+          skip-fetch-gh-pages: true
           gh-pages-branch: gh-pages
           benchmark-data-dir-path: benchmarks/macOS-Intel-node24.x
           alert-threshold: '150%'
@@ -567,6 +572,7 @@ jobs:
           output-file-path: benchmark-artifacts/benchmark-macOS-ARM-node20.x/benchmark-results.json
           github-token: ${{ secrets.GITHUB_TOKEN }}
           auto-push: false
+          skip-fetch-gh-pages: true
           gh-pages-branch: gh-pages
           benchmark-data-dir-path: benchmarks/macOS-ARM-node20.x
           alert-threshold: '150%'
@@ -581,6 +587,7 @@ jobs:
           output-file-path: benchmark-artifacts/benchmark-macOS-ARM-node22.x/benchmark-results.json
           github-token: ${{ secrets.GITHUB_TOKEN }}
           auto-push: false
+          skip-fetch-gh-pages: true
           gh-pages-branch: gh-pages
           benchmark-data-dir-path: benchmarks/macOS-ARM-node22.x
           alert-threshold: '150%'
@@ -595,6 +602,7 @@ jobs:
           output-file-path: benchmark-artifacts/benchmark-macOS-ARM-node24.x/benchmark-results.json
           github-token: ${{ secrets.GITHUB_TOKEN }}
           auto-push: false
+          skip-fetch-gh-pages: true
           gh-pages-branch: gh-pages
           benchmark-data-dir-path: benchmarks/macOS-ARM-node24.x
           alert-threshold: '150%'
@@ -602,14 +610,7 @@ jobs:
           max-items-in-chart: 30
 
       - name: Push all benchmark updates at once
-        run: |
-          git config --local user.email "github-actions[bot]@users.noreply.github.com"
-          git config --local user.name "github-actions[bot]"
-          git add benchmarks/
-          if ! git diff --staged --quiet; then
-            git commit -m "Update benchmark results for all platforms"
-            git push
-          fi
+        run: git push origin gh-pages
 
   security-scan:
     name: Security Scan
