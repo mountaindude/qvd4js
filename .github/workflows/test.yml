@@ -123,6 +123,16 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Clean workspace (Windows)
+        if: runner.os == 'Windows'
+        shell: powershell
+        run: |
+          # Remove node_modules and package-lock to ensure clean install
+          if (Test-Path node_modules) { Remove-Item -Recurse -Force node_modules }
+          if (Test-Path package-lock.json) { Remove-Item -Force package-lock.json }
+          # Clear npm cache
+          npm cache clean --force
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
@@ -157,6 +167,18 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
+
+      - name: Verify installation (Windows)
+        if: runner.os == 'Windows'
+        shell: powershell
+        run: |
+          Write-Host "Checking for tsup installation..."
+          if (Test-Path "node_modules\.bin\tsup.cmd") {
+            Write-Host "✓ tsup found in node_modules"
+          } else {
+            Write-Host "✗ tsup NOT found - reinstalling..."
+            npm install
+          }
 
       - name: Build project
         run: npm run build
@@ -419,56 +441,46 @@ jobs:
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     permissions:
       contents: write
+      deployments: write
+    strategy:
+      max-parallel: 1
+      matrix:
+        config:
+          - { platform: 'Linux', node: '20.x' }
+          - { platform: 'Linux', node: '22.x' }
+          - { platform: 'Linux', node: '24.x' }
+          - { platform: 'Windows', node: '20.x' }
+          - { platform: 'Windows', node: '22.x' }
+          - { platform: 'Windows', node: '24.x' }
+          - { platform: 'macOS-Intel', node: '20.x' }
+          - { platform: 'macOS-Intel', node: '22.x' }
+          - { platform: 'macOS-Intel', node: '24.x' }
+          - { platform: 'macOS-ARM', node: '20.x' }
+          - { platform: 'macOS-ARM', node: '22.x' }
+          - { platform: 'macOS-ARM', node: '24.x' }
     steps:
-      - name: Checkout gh-pages branch
+      - name: Checkout code
         uses: actions/checkout@v4
-        with:
-          ref: gh-pages
-          fetch-depth: 0
 
-      - name: Download all benchmark artifacts
+      - name: Download benchmark artifact
         uses: actions/download-artifact@v4
         with:
-          pattern: benchmark-*
-          path: benchmark-artifacts
+          name: benchmark-${{ matrix.config.platform }}-node${{ matrix.config.node }}
+          path: .
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - name: Store benchmark result
+        uses: benchmark-action/github-action-benchmark@v1
         with:
-          node-version: '20.x'
-
-      - name: Process and store benchmarks
-        run: |
-          # Install the benchmark action tool
-          npm install -g github-action-benchmark
-
-          # Process each benchmark artifact
-          for artifact_dir in benchmark-artifacts/benchmark-*; do
-            if [ -d "$artifact_dir" ]; then
-              # Extract platform and node version from directory name
-              # e.g., benchmark-Linux-node20.x -> Linux-node20.x
-              config=$(basename "$artifact_dir" | sed 's/^benchmark-//')
-              
-              # Run benchmark action for each configuration
-              github-action-benchmark \
-                --name "qvd4js Benchmark - $config" \
-                --tool customBiggerIsBetter \
-                --output-file-path "$artifact_dir/benchmark-results.json" \
-                --benchmark-data-dir-path "benchmarks/$config" \
-                --gh-pages-branch gh-pages \
-                --skip-fetch-gh-pages \
-                --alert-threshold 150% \
-                --fail-on-alert false || echo "Warning: Benchmark processing failed for $config"
-            fi
-          done
-
-      - name: Commit and push all benchmarks
-        run: |
-          git config --local user.email "github-actions[bot]@users.noreply.github.com"
-          git config --local user.name "github-actions[bot]"
-          git add benchmarks/
-          git diff --staged --quiet || git commit -m "Update benchmark results for all platforms"
-          git push
+          name: qvd4js Benchmark - ${{ matrix.config.platform }} - Node ${{ matrix.config.node }}
+          tool: 'customBiggerIsBetter'
+          output-file-path: benchmark-results.json
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          auto-push: true
+          gh-pages-branch: gh-pages
+          benchmark-data-dir-path: benchmarks/${{ matrix.config.platform }}-node${{ matrix.config.node }}
+          alert-threshold: '150%'
+          fail-on-alert: false
+          max-items-in-chart: 30
 
   security-scan:
     name: Security Scan
