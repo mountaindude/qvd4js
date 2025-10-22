@@ -190,17 +190,81 @@ describe('Cross-Platform Path Compatibility', () => {
       // Should not throw with case-insensitive comparison
       expect(() => validatePath(testFile, testDir)).not.toThrow();
 
-  // Test macOS
-  mockPlatform('darwin');
+      // Test macOS
+      mockPlatform('darwin');
 
       // Should not throw with case-insensitive comparison
       expect(() => validatePath(testFile, testDir)).not.toThrow();
 
-  // Test Linux
-  mockPlatform('linux');
+      // Test Linux
+      mockPlatform('linux');
 
       // Should not throw with case-sensitive comparison (when case matches)
       expect(() => validatePath(testFile, testDir)).not.toThrow();
+    });
+  });
+
+  describe('Windows path shapes (win32 path module mocked)', () => {
+    const originalDescriptor = Object.getOwnPropertyDescriptor(process, 'platform');
+
+    const mockPlatform = (value) => {
+      Object.defineProperty(process, 'platform', {value});
+    };
+
+    const loadValidatePathWithWin32 = () => {
+      // Load validatePath with 'path' mocked to the real win32 implementation
+      const realPath = jest.requireActual('path');
+      let validatePathWin;
+      jest.isolateModules(() => {
+        jest.doMock('path', () => realPath.win32);
+        // eslint-disable-next-line global-require
+        validatePathWin = require('../src/util/validatePath.js').validatePath;
+      });
+      return validatePathWin;
+    };
+
+    afterEach(() => {
+      // Restore originals and clear mocks
+      jest.resetModules();
+      jest.unmock('path');
+      if (originalDescriptor) {
+        Object.defineProperty(process, 'platform', originalDescriptor);
+      }
+    });
+
+    test('should accept drive-letter paths within allowedDir (C:\\...)', () => {
+      mockPlatform('win32');
+      const validatePathWin = loadValidatePathWithWin32();
+      const winPath = require('path').win32;
+
+      const baseDir = 'C\\\\Users\\Test\\data'; // 'C:\\Users\\Test\\data' string literal
+      const filePath = 'C\\\\Users\\Test\\data\\small.qvd';
+
+      const result = validatePathWin(filePath, baseDir);
+      expect(result).toBe(winPath.resolve(filePath));
+    });
+
+    test('should accept UNC paths within allowedDir (\\\\server\\share\\...)', () => {
+      mockPlatform('win32');
+      const validatePathWin = loadValidatePathWithWin32();
+      const winPath = require('path').win32;
+
+      const baseDir = '\\\\server\\share\\data'; // "\\server\share\data"
+      const filePath = '\\\\server\\share\\data\\small.qvd';
+
+      const result = validatePathWin(filePath, baseDir);
+      expect(result).toBe(winPath.resolve(filePath));
+    });
+
+    test('should reject UNC path outside allowedDir', () => {
+      mockPlatform('win32');
+      const validatePathWin = loadValidatePathWithWin32();
+
+      const baseDir = '\\\\server\\share\\data';
+      const outsidePath = '\\\\server\\share\\other\\small.qvd';
+
+      // Use message-based assertion to avoid mismatched constructor instances across module isolates
+      expect(() => validatePathWin(outsidePath, baseDir)).toThrow(/Access denied/);
     });
   });
 });
