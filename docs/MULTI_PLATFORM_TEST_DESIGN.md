@@ -440,9 +440,12 @@ describe('Performance: Writing', () => {
 ### Node.js Version Strategy
 
 - **Minimum**: Node.js 20.10.0 (as per package.json engines)
-- **Current LTS**: Test on latest Node.js 20.x
-- **Next**: Test on Node.js 22.x for forward compatibility
+- **Main Target (LTS)**: Node.js 20.x - Active LTS until 2026-04-30
+- **Main Target (Current)**: Node.js 22.x - Active LTS from 2024-10-29 until 2027-04-30
+- **Future**: Node.js 24.x - For forward compatibility testing (Current release, enters LTS 2025-10-28)
 - **Matrix**: Run full test suite on all combinations
+
+Reference: <https://nodejs.org/en/about/previous-releases>
 
 ### Platform-Specific Considerations
 
@@ -520,7 +523,7 @@ jobs:
           - ubuntu-22.04
           - windows-2022
           - macos-13
-        node: ['20.x', '22.x']
+        node: ['20.x', '22.x', '24.x']
 
     steps:
       - uses: actions/checkout@v4
@@ -611,7 +614,7 @@ jobs:
           - self-hosted-linux
           - self-hosted-windows
           - self-hosted-macos
-        node: ['20.x', '22.x']
+        node: ['20.x', '22.x', '24.x']
 
     steps:
       - uses: actions/checkout@v4
