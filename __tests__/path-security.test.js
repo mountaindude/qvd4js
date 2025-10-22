@@ -39,19 +39,13 @@ describe('Path Traversal Security', () => {
 
     test('should prevent access outside allowed directory with absolute path', async () => {
       const restrictedDir = path.join(__dirname, 'data', 'subdir');
-      await expect(
-        QvdDataFrame.fromQvd(testDataPath, {allowedDir: restrictedDir}),
-      ).rejects.toThrow(QvdSecurityError);
-      await expect(
-        QvdDataFrame.fromQvd(testDataPath, {allowedDir: restrictedDir}),
-      ).rejects.toThrow('Access denied');
+      await expect(QvdDataFrame.fromQvd(testDataPath, {allowedDir: restrictedDir})).rejects.toThrow(QvdSecurityError);
+      await expect(QvdDataFrame.fromQvd(testDataPath, {allowedDir: restrictedDir})).rejects.toThrow('Access denied');
     });
 
     test('should prevent path traversal with ../ sequences when allowedDir is set', async () => {
       const maliciousPath = path.join(testDir, '../../../etc/passwd');
-      await expect(
-        QvdDataFrame.fromQvd(maliciousPath, {allowedDir: testDir}),
-      ).rejects.toThrow(QvdSecurityError);
+      await expect(QvdDataFrame.fromQvd(maliciousPath, {allowedDir: testDir})).rejects.toThrow(QvdSecurityError);
     });
 
     test('should normalize paths correctly', async () => {
@@ -62,25 +56,24 @@ describe('Path Traversal Security', () => {
     });
 
     test('should include security context in error', async () => {
-      try {
+      await expect(async () => {
         await QvdDataFrame.fromQvd(testDataPath, {allowedDir: '/restricted/path'});
-        fail('Should have thrown QvdSecurityError');
-      } catch (error) {
-        expect(error).toBeInstanceOf(QvdSecurityError);
-        expect(error.context).toBeDefined();
-        expect(error.context.reason).toBe('outside_allowed_directory');
-        expect(error.context.allowedDir).toBeDefined();
-        expect(error.context.resolvedPath).toBeDefined();
-      }
+      }).rejects.toMatchObject({
+        name: 'QvdSecurityError',
+        context: expect.objectContaining({
+          reason: 'outside_allowed_directory',
+          allowedDir: expect.anything(),
+          resolvedPath: expect.anything(),
+        }),
+      });
     });
 
     test('should have correct error code', async () => {
-      try {
+      await expect(async () => {
         await QvdDataFrame.fromQvd(testDataPath + '\0', {allowedDir: testDir});
-        fail('Should have thrown QvdSecurityError');
-      } catch (error) {
-        expect(error.code).toBe('QVD_SECURITY_ERROR');
-      }
+      }).rejects.toMatchObject({
+        code: 'QVD_SECURITY_ERROR',
+      });
     });
   });
 
@@ -147,25 +140,24 @@ describe('Path Traversal Security', () => {
     });
 
     test('should include security context in write error', async () => {
-      try {
+      await expect(async () => {
         await df.toQvd('/etc/passwd', {allowedDir: tempDir});
-        fail('Should have thrown QvdSecurityError');
-      } catch (error) {
-        expect(error).toBeInstanceOf(QvdSecurityError);
-        expect(error.context).toBeDefined();
-        expect(error.context.reason).toBe('outside_allowed_directory');
-        expect(error.context.allowedDir).toBeDefined();
-        expect(error.context.resolvedPath).toBeDefined();
-      }
+      }).rejects.toMatchObject({
+        name: 'QvdSecurityError',
+        context: expect.objectContaining({
+          reason: 'outside_allowed_directory',
+          allowedDir: expect.anything(),
+          resolvedPath: expect.anything(),
+        }),
+      });
     });
 
     test('should have correct error code for write', async () => {
-      try {
+      await expect(async () => {
         await df.toQvd(path.join(tempDir, 'output.qvd\0'));
-        fail('Should have thrown QvdSecurityError');
-      } catch (error) {
-        expect(error.code).toBe('QVD_SECURITY_ERROR');
-      }
+      }).rejects.toMatchObject({
+        code: 'QVD_SECURITY_ERROR',
+      });
     });
   });
 

@@ -27,6 +27,7 @@ describe('Buffer Bounds Checking', () => {
     for (const file of createdFiles) {
       try {
         await fs.promises.unlink(file);
+        // eslint-disable-next-line no-unused-vars
       } catch (error) {
         // Ignore errors if file doesn't exist
       }
@@ -298,14 +299,14 @@ describe('Buffer Bounds Checking', () => {
 
       const maliciousQvd = await createMaliciousQvd(maliciousHeader, validBuffer, createdFiles);
 
-      try {
+      await expect(async () => {
         await QvdDataFrame.fromQvd(maliciousQvd);
-        fail('Should have thrown an error');
-      } catch (error) {
-        expect(error.context.field).toBe(fieldName);
-        expect(error.context.file).toBeDefined();
-        expect(error.context.stage).toBe('parseSymbolTable');
-      }
+      }).rejects.toMatchObject({
+        context: {
+          field: fieldName,
+          stage: 'parseSymbolTable',
+        },
+      });
     });
 
     test('should include buffer size in overflow error context', async () => {
@@ -319,14 +320,15 @@ describe('Buffer Bounds Checking', () => {
 
       const maliciousQvd = await createMaliciousQvd(maliciousHeader, validBuffer, createdFiles);
 
-      try {
+      await expect(async () => {
         await QvdDataFrame.fromQvd(maliciousQvd);
-        fail('Should have thrown an error');
-      } catch (error) {
-        expect(error.context.bufferSize).toBeDefined();
-        expect(error.context.length).toBeDefined();
-        expect(error.context.offset).toBeDefined();
-      }
+      }).rejects.toMatchObject({
+        context: expect.objectContaining({
+          bufferSize: expect.anything(),
+          length: expect.anything(),
+          offset: expect.anything(),
+        }),
+      });
     });
   });
 
@@ -409,7 +411,9 @@ describe('Buffer Bounds Checking', () => {
 
     test('should throw error when header delimiter is truly missing', async () => {
       // Create a buffer without the header delimiter to ensure proper error handling
-      const invalidBuffer = Buffer.from('<?xml version="1.0"?><QvdTableHeader><TableName>Test</TableName></QvdTableHeader>');
+      const invalidBuffer = Buffer.from(
+        '<?xml version="1.0"?><QvdTableHeader><TableName>Test</TableName></QvdTableHeader>',
+      );
 
       const tempPath = path.join(__dirname, 'data', `test-missing-delimiter-${Date.now()}.qvd`);
       await fs.promises.writeFile(tempPath, invalidBuffer);
@@ -449,7 +453,11 @@ async function createMaliciousQvd(header, originalBuffer, fileTracker) {
   const maliciousBuffer = Buffer.concat([newHeaderBuffer, binaryDataBuffer]);
 
   // Write to temp file in the test data directory to avoid path security issues
-  const tempPath = path.join(__dirname, 'data', `malicious-${Date.now()}-${Math.random().toString(36).substring(7)}.qvd`);
+  const tempPath = path.join(
+    __dirname,
+    'data',
+    `malicious-${Date.now()}-${Math.random().toString(36).substring(7)}.qvd`,
+  );
   await fs.promises.writeFile(tempPath, maliciousBuffer);
 
   // Track file for cleanup

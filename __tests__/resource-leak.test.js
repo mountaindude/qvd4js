@@ -27,6 +27,7 @@ describe('Resource leak prevention in QvdFileReader', () => {
       try {
         // Load with maxRows to exercise the code path with file descriptor
         await QvdDataFrame.fromQvd(testFilePath, {maxRows: 10});
+        // eslint-disable-next-line no-unused-vars
       } catch (error) {
         // Ignore any errors - we're just checking for resource leaks
       }

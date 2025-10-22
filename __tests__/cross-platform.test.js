@@ -217,7 +217,7 @@ describe('Cross-Platform Path Compatibility', () => {
       let validatePathWin;
       jest.isolateModules(() => {
         jest.doMock('path', () => realPath.win32);
-        // eslint-disable-next-line global-require
+
         validatePathWin = require('../src/util/validatePath.js').validatePath;
       });
       return validatePathWin;
