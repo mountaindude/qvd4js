@@ -3,25 +3,26 @@ import {validatePath} from '../src/util/validatePath.js';
 import {QvdSecurityError} from '../src/QvdErrors.js';
 
 describe('Cross-Platform Path Compatibility', () => {
-  const originalPlatform = process.platform;
+  const originalDescriptor = Object.getOwnPropertyDescriptor(process, 'platform');
+
+  const mockPlatform = (value) => {
+    // Redefine process.platform to the desired value for this test
+    Object.defineProperty(process, 'platform', {
+      value,
+    });
+  };
 
   afterEach(() => {
-    // Restore original platform
-    Object.defineProperty(process, 'platform', {
-      value: originalPlatform,
-      writable: true,
-      configurable: true,
-    });
+    // Restore original descriptor for process.platform after each test
+    if (originalDescriptor) {
+      Object.defineProperty(process, 'platform', originalDescriptor);
+    }
   });
 
   describe('Case sensitivity handling', () => {
     test('should use case-insensitive comparison on Windows (win32)', () => {
       // Mock Windows platform
-      Object.defineProperty(process, 'platform', {
-        value: 'win32',
-        writable: true,
-        configurable: true,
-      });
+      mockPlatform('win32');
 
       const testDir = path.join(__dirname, 'data');
       const testFile = path.join(__dirname, 'data', 'small.qvd');
@@ -34,11 +35,7 @@ describe('Cross-Platform Path Compatibility', () => {
 
     test('should use case-insensitive comparison on macOS (darwin)', () => {
       // Mock macOS platform
-      Object.defineProperty(process, 'platform', {
-        value: 'darwin',
-        writable: true,
-        configurable: true,
-      });
+      mockPlatform('darwin');
 
       const testDir = path.join(__dirname, 'data');
       const testFile = path.join(__dirname, 'data', 'small.qvd');
@@ -49,12 +46,8 @@ describe('Cross-Platform Path Compatibility', () => {
     });
 
     test('should use case-sensitive comparison on Linux', () => {
-      // Mock Linux platform (likely already Linux, but explicit)
-      Object.defineProperty(process, 'platform', {
-        value: 'linux',
-        writable: true,
-        configurable: true,
-      });
+      // Mock Linux platform (explicit)
+      mockPlatform('linux');
 
       const testDir = path.join(__dirname, 'data');
       const testFile = path.join(__dirname, 'data', 'small.qvd');
@@ -88,11 +81,7 @@ describe('Cross-Platform Path Compatibility', () => {
   describe('Platform-specific path features', () => {
     test('should correctly handle paths with drive letters on Windows', () => {
       // Mock Windows platform
-      Object.defineProperty(process, 'platform', {
-        value: 'win32',
-        writable: true,
-        configurable: true,
-      });
+      mockPlatform('win32');
 
       // On actual Windows, these would be real paths
       // On Linux/macOS in tests, path.resolve will prepend CWD
@@ -193,11 +182,7 @@ describe('Cross-Platform Path Compatibility', () => {
   describe('Platform detection', () => {
     test('should correctly identify case-insensitive file systems', () => {
       // Test Windows
-      Object.defineProperty(process, 'platform', {
-        value: 'win32',
-        writable: true,
-        configurable: true,
-      });
+      mockPlatform('win32');
 
       const testDir = path.join(__dirname, 'data');
       const testFile = path.join(__dirname, 'data', 'small.qvd');
@@ -205,22 +190,14 @@ describe('Cross-Platform Path Compatibility', () => {
       // Should not throw with case-insensitive comparison
       expect(() => validatePath(testFile, testDir)).not.toThrow();
 
-      // Test macOS
-      Object.defineProperty(process, 'platform', {
-        value: 'darwin',
-        writable: true,
-        configurable: true,
-      });
+  // Test macOS
+  mockPlatform('darwin');
 
       // Should not throw with case-insensitive comparison
       expect(() => validatePath(testFile, testDir)).not.toThrow();
 
-      // Test Linux
-      Object.defineProperty(process, 'platform', {
-        value: 'linux',
-        writable: true,
-        configurable: true,
-      });
+  // Test Linux
+  mockPlatform('linux');
 
       // Should not throw with case-sensitive comparison (when case matches)
       expect(() => validatePath(testFile, testDir)).not.toThrow();
