@@ -195,12 +195,12 @@ jobs:
         with:
           name: benchmark-${{ matrix.platform }}-node${{ matrix.node }}
           path: benchmark-results.json
-          retention-days: 30
+          retention-days: 3
 
   create-benchmark-index:
     name: Create Benchmark Overview Page
     runs-on: ubuntu-22.04
-    needs: publish-benchmarks
+    needs: process-benchmarks
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     permissions:
       contents: write
@@ -412,54 +412,204 @@ jobs:
           git diff --staged --quiet || git commit -m "Update benchmark overview page"
           git push
 
-  publish-benchmarks:
-    name: Publish Benchmarks to GitHub Pages
+  process-benchmarks:
+    name: Process Benchmarks
     runs-on: ubuntu-22.04
     needs: test
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     permissions:
       contents: write
       deployments: write
-    strategy:
-      fail-fast: false
-      max-parallel: 1
-      matrix:
-        config:
-          - { platform: 'Linux', node: '20.x' }
-          - { platform: 'Linux', node: '22.x' }
-          - { platform: 'Linux', node: '24.x' }
-          - { platform: 'Windows', node: '20.x' }
-          - { platform: 'Windows', node: '22.x' }
-          - { platform: 'Windows', node: '24.x' }
-          - { platform: 'macOS-Intel', node: '20.x' }
-          - { platform: 'macOS-Intel', node: '22.x' }
-          - { platform: 'macOS-Intel', node: '24.x' }
-          - { platform: 'macOS-ARM', node: '20.x' }
-          - { platform: 'macOS-ARM', node: '22.x' }
-          - { platform: 'macOS-ARM', node: '24.x' }
     steps:
-      - name: Checkout code
+      - name: Checkout gh-pages branch
         uses: actions/checkout@v4
+        with:
+          ref: gh-pages
+          fetch-depth: 0
 
-      - name: Download benchmark artifact
+      - name: Download all benchmark artifacts
         uses: actions/download-artifact@v4
         with:
-          name: benchmark-${{ matrix.config.platform }}-node${{ matrix.config.node }}
-          path: .
+          pattern: benchmark-*
+          path: benchmark-artifacts
 
-      - name: Store benchmark result
+      - name: Process Linux Node 20.x
         uses: benchmark-action/github-action-benchmark@v1
         with:
-          name: qvd4js Benchmark - ${{ matrix.config.platform }} - Node ${{ matrix.config.node }}
+          name: qvd4js Benchmark - Linux - Node 20.x
           tool: 'customBiggerIsBetter'
-          output-file-path: benchmark-results.json
+          output-file-path: benchmark-artifacts/benchmark-Linux-node20.x/benchmark-results.json
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          auto-push: true
+          auto-push: false
           gh-pages-branch: gh-pages
-          benchmark-data-dir-path: benchmarks/${{ matrix.config.platform }}-node${{ matrix.config.node }}
+          benchmark-data-dir-path: benchmarks/Linux-node20.x
           alert-threshold: '150%'
           fail-on-alert: false
           max-items-in-chart: 30
+
+      - name: Process Linux Node 22.x
+        uses: benchmark-action/github-action-benchmark@v1
+        with:
+          name: qvd4js Benchmark - Linux - Node 22.x
+          tool: 'customBiggerIsBetter'
+          output-file-path: benchmark-artifacts/benchmark-Linux-node22.x/benchmark-results.json
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          auto-push: false
+          gh-pages-branch: gh-pages
+          benchmark-data-dir-path: benchmarks/Linux-node22.x
+          alert-threshold: '150%'
+          fail-on-alert: false
+          max-items-in-chart: 30
+
+      - name: Process Linux Node 24.x
+        uses: benchmark-action/github-action-benchmark@v1
+        with:
+          name: qvd4js Benchmark - Linux - Node 24.x
+          tool: 'customBiggerIsBetter'
+          output-file-path: benchmark-artifacts/benchmark-Linux-node24.x/benchmark-results.json
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          auto-push: false
+          gh-pages-branch: gh-pages
+          benchmark-data-dir-path: benchmarks/Linux-node24.x
+          alert-threshold: '150%'
+          fail-on-alert: false
+          max-items-in-chart: 30
+
+      - name: Process Windows Node 20.x
+        uses: benchmark-action/github-action-benchmark@v1
+        with:
+          name: qvd4js Benchmark - Windows - Node 20.x
+          tool: 'customBiggerIsBetter'
+          output-file-path: benchmark-artifacts/benchmark-Windows-node20.x/benchmark-results.json
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          auto-push: false
+          gh-pages-branch: gh-pages
+          benchmark-data-dir-path: benchmarks/Windows-node20.x
+          alert-threshold: '150%'
+          fail-on-alert: false
+          max-items-in-chart: 30
+
+      - name: Process Windows Node 22.x
+        uses: benchmark-action/github-action-benchmark@v1
+        with:
+          name: qvd4js Benchmark - Windows - Node 22.x
+          tool: 'customBiggerIsBetter'
+          output-file-path: benchmark-artifacts/benchmark-Windows-node22.x/benchmark-results.json
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          auto-push: false
+          gh-pages-branch: gh-pages
+          benchmark-data-dir-path: benchmarks/Windows-node22.x
+          alert-threshold: '150%'
+          fail-on-alert: false
+          max-items-in-chart: 30
+
+      - name: Process Windows Node 24.x
+        uses: benchmark-action/github-action-benchmark@v1
+        with:
+          name: qvd4js Benchmark - Windows - Node 24.x
+          tool: 'customBiggerIsBetter'
+          output-file-path: benchmark-artifacts/benchmark-Windows-node24.x/benchmark-results.json
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          auto-push: false
+          gh-pages-branch: gh-pages
+          benchmark-data-dir-path: benchmarks/Windows-node24.x
+          alert-threshold: '150%'
+          fail-on-alert: false
+          max-items-in-chart: 30
+
+      - name: Process macOS-Intel Node 20.x
+        uses: benchmark-action/github-action-benchmark@v1
+        with:
+          name: qvd4js Benchmark - macOS-Intel - Node 20.x
+          tool: 'customBiggerIsBetter'
+          output-file-path: benchmark-artifacts/benchmark-macOS-Intel-node20.x/benchmark-results.json
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          auto-push: false
+          gh-pages-branch: gh-pages
+          benchmark-data-dir-path: benchmarks/macOS-Intel-node20.x
+          alert-threshold: '150%'
+          fail-on-alert: false
+          max-items-in-chart: 30
+
+      - name: Process macOS-Intel Node 22.x
+        uses: benchmark-action/github-action-benchmark@v1
+        with:
+          name: qvd4js Benchmark - macOS-Intel - Node 22.x
+          tool: 'customBiggerIsBetter'
+          output-file-path: benchmark-artifacts/benchmark-macOS-Intel-node22.x/benchmark-results.json
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          auto-push: false
+          gh-pages-branch: gh-pages
+          benchmark-data-dir-path: benchmarks/macOS-Intel-node22.x
+          alert-threshold: '150%'
+          fail-on-alert: false
+          max-items-in-chart: 30
+
+      - name: Process macOS-Intel Node 24.x
+        uses: benchmark-action/github-action-benchmark@v1
+        with:
+          name: qvd4js Benchmark - macOS-Intel - Node 24.x
+          tool: 'customBiggerIsBetter'
+          output-file-path: benchmark-artifacts/benchmark-macOS-Intel-node24.x/benchmark-results.json
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          auto-push: false
+          gh-pages-branch: gh-pages
+          benchmark-data-dir-path: benchmarks/macOS-Intel-node24.x
+          alert-threshold: '150%'
+          fail-on-alert: false
+          max-items-in-chart: 30
+
+      - name: Process macOS-ARM Node 20.x
+        uses: benchmark-action/github-action-benchmark@v1
+        with:
+          name: qvd4js Benchmark - macOS-ARM - Node 20.x
+          tool: 'customBiggerIsBetter'
+          output-file-path: benchmark-artifacts/benchmark-macOS-ARM-node20.x/benchmark-results.json
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          auto-push: false
+          gh-pages-branch: gh-pages
+          benchmark-data-dir-path: benchmarks/macOS-ARM-node20.x
+          alert-threshold: '150%'
+          fail-on-alert: false
+          max-items-in-chart: 30
+
+      - name: Process macOS-ARM Node 22.x
+        uses: benchmark-action/github-action-benchmark@v1
+        with:
+          name: qvd4js Benchmark - macOS-ARM - Node 22.x
+          tool: 'customBiggerIsBetter'
+          output-file-path: benchmark-artifacts/benchmark-macOS-ARM-node22.x/benchmark-results.json
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          auto-push: false
+          gh-pages-branch: gh-pages
+          benchmark-data-dir-path: benchmarks/macOS-ARM-node22.x
+          alert-threshold: '150%'
+          fail-on-alert: false
+          max-items-in-chart: 30
+
+      - name: Process macOS-ARM Node 24.x
+        uses: benchmark-action/github-action-benchmark@v1
+        with:
+          name: qvd4js Benchmark - macOS-ARM - Node 24.x
+          tool: 'customBiggerIsBetter'
+          output-file-path: benchmark-artifacts/benchmark-macOS-ARM-node24.x/benchmark-results.json
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          auto-push: false
+          gh-pages-branch: gh-pages
+          benchmark-data-dir-path: benchmarks/macOS-ARM-node24.x
+          alert-threshold: '150%'
+          fail-on-alert: false
+          max-items-in-chart: 30
+
+      - name: Push all benchmark updates at once
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add benchmarks/
+          if ! git diff --staged --quiet; then
+            git commit -m "Update benchmark results for all platforms"
+            git push
+          fi
 
   security-scan:
     name: Security Scan
@@ -491,7 +641,7 @@ jobs:
   summary:
     name: Test Summary
     runs-on: ubuntu-22.04
-    needs: [create-benchmark-index, security-scan, publish-benchmarks]
+    needs: [create-benchmark-index, security-scan, process-benchmarks]
     if: always()
     steps:
       - name: Check test results
@@ -499,4 +649,4 @@ jobs:
           echo "## Test Summary" >> $GITHUB_STEP_SUMMARY
           echo "✅ Create Benchmark Overview: ${{ needs.create-benchmark-index.result }}" >> $GITHUB_STEP_SUMMARY
           echo "✅ Security Scan: ${{ needs.security-scan.result }}" >> $GITHUB_STEP_SUMMARY
-          echo "✅ Publish Benchmarks: ${{ needs.publish-benchmarks.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "✅ Process Benchmarks: ${{ needs.process-benchmarks.result }}" >> $GITHUB_STEP_SUMMARY
