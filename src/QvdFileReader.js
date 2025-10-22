@@ -141,7 +141,10 @@ export class QvdFileReader {
     const headerBeginIndex = 0;
     const headerDelimiterIndex = this._buffer.indexOf(HEADER_DELIMITER, headerBeginIndex);
 
-    if (!headerDelimiterIndex) {
+    // Check explicitly for -1 (not found) rather than using falsy check (!headerDelimiterIndex)
+    // because indexOf() returns 0 when the delimiter is at position 0, which is a valid buffer index.
+    // Using !0 would incorrectly treat position 0 as an error.
+    if (headerDelimiterIndex === -1) {
       throw new QvdCorruptedError(
         'The XML header section does not exist or is not properly delimited from the binary data.',
         {
