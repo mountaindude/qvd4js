@@ -1,10 +1,14 @@
 import {Bench} from 'tinybench';
 import path from 'path';
 import {fileURLToPath} from 'url';
+import fs from 'fs';
 import {QvdDataFrame} from '../src/index.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
+// Check if running in CI mode (output to file)
+const isCI = process.argv.includes('--ci');
 
 const bench = new Bench({time: 1000});
 
@@ -27,8 +31,6 @@ bench
 
 await bench.run();
 
-console.table(bench.table());
-
 // Export for CI consumption in github-action-benchmark format
 const results = bench.tasks.map((task) => ({
   name: task.name,
@@ -38,5 +40,14 @@ const results = bench.tasks.map((task) => ({
   extra: `${task.result.samples ? task.result.samples.length : 0} samples`,
 }));
 
-console.log('\n--- Benchmark Results (JSON) ---');
-console.log(JSON.stringify(results, null, 2));
+if (isCI) {
+  // CI mode: Write JSON directly to file
+  const outputPath = path.join(__dirname, '../benchmark-results.json');
+  fs.writeFileSync(outputPath, JSON.stringify(results, null, 2));
+  console.log(`Benchmark results written to ${outputPath}`);
+} else {
+  // Interactive mode: Show table and JSON
+  console.table(bench.table());
+  console.log('\n--- Benchmark Results (JSON) ---');
+  console.log(JSON.stringify(results, null, 2));
+}
