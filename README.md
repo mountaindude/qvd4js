@@ -31,6 +31,7 @@ structure and vica versa. The library is written to be used in a Node.js environ
       - [`getAllFieldMetadata(): object[]`](#getallfieldmetadata-object)
       - [`setFileMetadata(metadata: object): void`](#setfilemetadatametadata-object-void)
       - [`setFieldMetadata(fieldName: string, metadata: object): void`](#setfieldmetadatafieldname-string-metadata-object-void)
+  - [Testing](#testing)
   - [Contributors](#contributors)
   - [License](#license)
     - [Forbidden](#forbidden)
@@ -306,6 +307,37 @@ Immutable properties (cannot be modified):
 - `bitWidth`: Bit width in index table
 - `bias`: Bias value
 - `noOfSymbols`: Number of symbols
+
+## Testing
+
+qvd4js has comprehensive test coverage with automated multi-platform testing. For detailed information about the testing infrastructure, including:
+
+- Test architecture and coverage breakdown
+- Multi-platform support (Windows, macOS, Linux)
+- Security testing approach
+- Self-hosted runner setup
+- Performance benchmarking
+
+See the **[Testing Documentation](./docs/README.md)** in the `docs/` directory.
+
+Quick links:
+- **[Testing Summary](./docs/TESTING_SUMMARY.md)** - Executive overview and quick start
+- **[Complete Design](./docs/MULTI_PLATFORM_TEST_DESIGN.md)** - Full technical specification
+
+### Running Tests
+
+```bash
+# Run all tests
+npm test
+
+# Run tests with coverage
+npm run coverage
+
+# Run specific test file
+npm test -- __tests__/reader.test.js
+```
+
+Current test coverage: **91.7%** across 95+ tests covering unit, integration, and error handling scenarios.
 
 ## Contributors
 
