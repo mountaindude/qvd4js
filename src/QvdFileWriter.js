@@ -306,12 +306,16 @@ export class QvdFileWriter {
       return null;
     }
 
+    const INT32_MIN = -2147483648;
+    const INT32_MAX = 2147483647;
+
     const isInteger = typeof raw === 'number' && Number.isInteger(raw);
     const isFloat = typeof raw === 'number' && !Number.isInteger(raw);
+    const isWithinInt32Range = typeof raw === 'number' && raw >= INT32_MIN && raw <= INT32_MAX;
 
-    if (isInteger) {
+    if (isInteger && isWithinInt32Range) {
       return QvdSymbol.fromDualIntValue(raw, raw.toString());
-    } else if (isFloat) {
+    } else if (isFloat || (isInteger && !isWithinInt32Range)) {
       return QvdSymbol.fromDualDoubleValue(raw, raw.toString());
     } else {
       return QvdSymbol.fromStringValue(raw);
