@@ -1,5 +1,8 @@
 import path from 'path';
 import {QvdDataFrame} from '../src';
+import {getDirname} from './test-utils.js';
+
+const __dirname = getDirname(import.meta.url);
 
 describe('Lazy loading of QVD files', () => {
   test('Loading a QVD file with maxRows should only load specified rows', async () => {

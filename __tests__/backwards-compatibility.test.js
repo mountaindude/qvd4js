@@ -1,5 +1,8 @@
 import path from 'path';
 import {QvdDataFrame, QvdSymbol, QvdFileReader, QvdFileWriter} from '../src';
+import {getDirname} from './test-utils.js';
+
+const __dirname = getDirname(import.meta.url);
 
 describe('Backwards Compatibility Tests', () => {
   test('All classes should be exported from main index', () => {

@@ -1,5 +1,8 @@
 import path from 'path';
 import {QvdDataFrame, QvdValidationError} from '../src';
+import {getDirname} from './test-utils.js';
+
+const __dirname = getDirname(import.meta.url);
 
 describe('QvdDataFrame Input Validation', () => {
   let df;

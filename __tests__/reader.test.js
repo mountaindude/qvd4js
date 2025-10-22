@@ -1,5 +1,8 @@
 import path from 'path';
 import {QvdDataFrame} from '../src';
+import {getDirname} from './test-utils.js';
+
+const __dirname = getDirname(import.meta.url);
 
 test('Parsing a QVD file with ~1000 rows should work correctly', async () => {
   const df = await QvdDataFrame.fromQvd(path.join(__dirname, 'data/small.qvd'));

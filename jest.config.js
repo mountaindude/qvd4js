@@ -7,13 +7,9 @@ export default {
     '!**/coverage/**',
     '!**/benchmarks/**',
     '!jest.config.js',
+    '!tsup.config.js',
+    '!**/__tests__/test-utils.js',
   ],
-  testPathIgnorePatterns: ['<rootDir>/node_modules/', '<rootDir>/benchmarks/'],
-  transform: {
-    // Use babel-jest to transpile tests with the next/babel preset
-    // https://jestjs.io/docs/configuration#transform-objectstring-pathtotransformer--pathtotransformer-object
-    '^.+\\.(js|jsx|ts|tsx)$': ['babel-jest'],
-  },
-  transformIgnorePatterns: ['/node_modules/'],
+  testPathIgnorePatterns: ['<rootDir>/node_modules/', '<rootDir>/benchmarks/', '<rootDir>/__tests__/test-utils.js'],
   testEnvironment: 'node',
 };

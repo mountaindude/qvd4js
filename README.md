@@ -2,9 +2,10 @@
 
 > Utility library for reading/writing Qlik View Data (QVD) files in JavaScript.
 
-The _qvd4js_ library provides a simple API for reading/writing Qlik View Data (QVD) files in JavaScript. Using
-this library, it is possible to parse the binary QVD file format and convert it to a JavaScript object
-structure and vica versa. The library is written to be used in a Node.js environment exclusively.
+The _qvd4js_ library provides a simple API for reading/writing Qlik View Data (QVD) files in JavaScript.
+
+Using this library, it is possible to parse the binary QVD file format and convert it to a JavaScript object
+structure and vice versa. The library is written to be used in a Node.js environment exclusively.
 
 ---
 
@@ -34,6 +35,7 @@ structure and vica versa. The library is written to be used in a Node.js environ
       - [`setFileMetadata(metadata: object): void`](#setfilemetadatametadata-object-void)
       - [`setFieldMetadata(fieldName: string, metadata: object): void`](#setfieldmetadatafieldname-string-metadata-object-void)
   - [Testing](#testing)
+    - [Running Tests](#running-tests)
   - [Contributors](#contributors)
   - [License](#license)
     - [Forbidden](#forbidden)
@@ -50,6 +52,26 @@ You can get _qvd4js_ using the following command:
 ```bash
 npm install qvd4js --save
 ```
+
+**Module Format Support:**
+This library is published as a **dual ESM/CJS package**, providing full compatibility with both modern ES modules and traditional CommonJS environments:
+
+- ✅ **ESM (ES Modules)**: Native `import` statements in Node.js and modern bundlers
+- ✅ **CommonJS**: Traditional `require()` for compatibility with older Node.js projects
+- ✅ **TypeScript**: Full compatibility with TypeScript projects (both module systems)
+- ✅ **Bundlers**: Works with Webpack, Vite, Rollup, esbuild, and other modern build tools
+
+**Usage Examples:**
+
+```javascript
+// ESM (ES Modules) - Modern Node.js and TypeScript
+import {QvdDataFrame} from 'qvd4js';
+
+// CommonJS - Traditional Node.js
+const {QvdDataFrame} = require('qvd4js');
+```
+
+The package automatically provides the correct format based on your project's configuration.
 
 ## Usage
 
@@ -434,6 +456,7 @@ qvd4js has comprehensive test coverage with automated multi-platform testing. Fo
 See the **[Testing Documentation](./docs/README.md)** in the `docs/` directory.
 
 Quick links:
+
 - **[Testing Summary](./docs/TESTING_SUMMARY.md)** - Executive overview and quick start
 - **[Complete Design](./docs/MULTI_PLATFORM_TEST_DESIGN.md)** - Full technical specification
 
@@ -455,7 +478,7 @@ Current test coverage: **91.7%** across 95+ tests covering unit, integration, an
 ## Contributors
 
 - [Constantin Müller](https://mueller-constantin.de) - Original author
-- [Göran Sander](https://github.com/mountaindude) - General refresh, improved error handling, expose all metadata from XML headers, lazy loading of symbol and index tables, TypeScript typings, security hardening, bug fixes
+- [Göran Sander](https://github.com/mountaindude) - General refresh, improved error handling, expose all metadata from XML headers, lazy loading of symbol and index tables, ESM/CJS support, multi-platform testing, TypeScript typings, security hardening, bug fixes
 
 ## License
 

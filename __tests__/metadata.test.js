@@ -1,6 +1,9 @@
 import path from 'path';
 import fs from 'fs';
 import {QvdDataFrame} from '../src';
+import {getDirname} from './test-utils.js';
+
+const __dirname = getDirname(import.meta.url);
 
 describe('QVD Metadata Access', () => {
   test('Should expose file-level metadata after loading QVD', async () => {

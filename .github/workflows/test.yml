@@ -413,7 +413,7 @@ jobs:
   publish-benchmarks:
     name: Publish Benchmarks to GitHub Pages
     runs-on: ubuntu-22.04
-    needs: [test, create-benchmark-index]
+    needs: test
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     permissions:
       contents: write
@@ -498,13 +498,12 @@ jobs:
   summary:
     name: Test Summary
     runs-on: ubuntu-22.04
-    needs: [lint, build, test, security-scan]
+    needs: [create-benchmark-index, security-scan, publish-benchmarks]
     if: always()
     steps:
       - name: Check test results
         run: |
           echo "## Test Summary" >> $GITHUB_STEP_SUMMARY
-          echo "✅ Lint: ${{ needs.lint.result }}" >> $GITHUB_STEP_SUMMARY
-          echo "✅ Build: ${{ needs.build.result }}" >> $GITHUB_STEP_SUMMARY
-          echo "✅ Tests: ${{ needs.test.result }}" >> $GITHUB_STEP_SUMMARY
-          echo "✅ Security: ${{ needs.security-scan.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "✅ Create Benchmark Overview: ${{ needs.create-benchmark-index.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "✅ Security Scan: ${{ needs.security-scan.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "✅ Publish Benchmarks: ${{ needs.publish-benchmarks.result }}" >> $GITHUB_STEP_SUMMARY
