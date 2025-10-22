@@ -200,7 +200,7 @@ jobs:
   create-benchmark-index:
     name: Create Benchmark Overview Page
     runs-on: ubuntu-22.04
-    needs: build
+    needs: publish-benchmarks
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     permissions:
       contents: write
@@ -421,6 +421,7 @@ jobs:
       contents: write
       deployments: write
     strategy:
+      fail-fast: false
       max-parallel: 1
       matrix:
         config:
