@@ -46,7 +46,7 @@ export class QvdFileWriter {
   /**
    * Writes the data to the QVD file.
    */
-  _writeData() {
+  async _writeData() {
     assert(this._header, 'The QVD file header has not been parsed.');
     assert(this._symbolBuffer, 'The QVD file symbol table has not been parsed.');
     assert(this._indexBuffer, 'The QVD file index table has not been parsed.');
@@ -54,14 +54,22 @@ export class QvdFileWriter {
     // @ts-ignore - Buffer.concat type compatibility
     const headerBuffer = Buffer.concat([Buffer.from(this._header, 'utf-8'), Buffer.from([0])]);
 
-    const fd = fs.openSync(this._path, 'w');
-    // @ts-ignore - Buffer type compatibility
-    fs.writeSync(fd, headerBuffer, 0, headerBuffer.length, 0);
-    // @ts-ignore - Buffer type compatibility
-    fs.writeSync(fd, this._symbolBuffer, 0, this._symbolBuffer.length, headerBuffer.length);
-    // @ts-ignore - Buffer type compatibility
-    fs.writeSync(fd, this._indexBuffer, 0, this._indexBuffer.length, headerBuffer.length + this._symbolBuffer.length);
-    fs.closeSync(fd);
+    let fd;
+    try {
+      fd = await fs.promises.open(this._path, 'w');
+      await fd.write(headerBuffer, 0, headerBuffer.length, 0);
+      await fd.write(this._symbolBuffer, 0, this._symbolBuffer.length, headerBuffer.length);
+      await fd.write(
+        this._indexBuffer,
+        0,
+        this._indexBuffer.length,
+        headerBuffer.length + this._symbolBuffer.length,
+      );
+    } finally {
+      if (fd) {
+        await fd.close();
+      }
+    }
   }
 
   /**
@@ -336,10 +344,10 @@ export class QvdFileWriter {
   /**
    * Persists the data frame to a QVD file.
    */
-  save() {
+  async save() {
     this._buildSymbolTable();
     this._buildIndexTable();
     this._buildHeader();
-    this._writeData();
+    await this._writeData();
   }
 }

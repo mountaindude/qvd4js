@@ -484,7 +484,7 @@ export class QvdDataFrame {
   async toQvd(path, options = {}) {
     const {QvdFileWriter} = await import('./QvdFileWriter.js');
     const writerOptions = {allowedDir: options.allowedDir};
-    new QvdFileWriter(path, this, writerOptions).save();
+    await new QvdFileWriter(path, this, writerOptions).save();
   }
 
   /**
