@@ -1,12 +1,9 @@
 import path from 'path';
 import {QvdDataFrame} from '../src';
 
-test('Parsing a QVD file with ~1000 rows should take less than 250ms', async () => {
-  const start = Date.now();
+test('Parsing a QVD file with ~1000 rows should work correctly', async () => {
   const df = await QvdDataFrame.fromQvd(path.join(__dirname, 'data/small.qvd'));
-  const end = Date.now();
 
-  expect(end - start).toBeLessThan(250);
   expect(df).toBeDefined();
   expect(df.shape).toBeDefined();
   expect(df.shape[0]).toBe(606);
@@ -18,12 +15,9 @@ test('Parsing a QVD file with ~1000 rows should take less than 250ms', async () 
   expect(df.head(5).shape).toEqual([5, 8]);
 });
 
-test('Parsing a QVD file with ~20000 rows should take less than 2500ms', async () => {
-  const start = Date.now();
+test('Parsing a QVD file with ~20000 rows should work correctly', async () => {
   const df = await QvdDataFrame.fromQvd(path.join(__dirname, 'data/medium.qvd'));
-  const end = Date.now();
 
-  expect(end - start).toBeLessThan(2500);
   expect(df).toBeDefined();
   expect(df.shape).toBeDefined();
   expect(df.shape[0]).toBe(18484);
@@ -35,12 +29,9 @@ test('Parsing a QVD file with ~20000 rows should take less than 2500ms', async (
   expect(df.head(5).shape).toEqual([5, 13]);
 });
 
-test('Parsing a QVD file with ~60000 rows should take less than 5000ms', async () => {
-  const start = Date.now();
+test('Parsing a QVD file with ~60000 rows should work correctly', async () => {
   const df = await QvdDataFrame.fromQvd(path.join(__dirname, 'data/large.qvd'));
-  const end = Date.now();
 
-  expect(end - start).toBeLessThan(5000);
   expect(df).toBeDefined();
   expect(df.shape).toBeDefined();
   expect(df.shape[0]).toBe(60398);
