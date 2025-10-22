@@ -2,9 +2,7 @@ name: Multi-Platform Test Suite
 
 on:
   push:
-    branches: [main, develop]
-  pull_request:
-    branches: [main, develop]
+    branches: [main]
   schedule:
     - cron: '0 0 * * 0' # Weekly on Sunday
   workflow_dispatch:
