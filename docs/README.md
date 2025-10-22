@@ -38,33 +38,31 @@ Welcome to the qvd4js documentation directory. This folder contains comprehensiv
 
 **Reading Time**: 5-10 minutes
 
-### [Multi-Platform Test Solution Design](./MULTI_PLATFORM_TEST_DESIGN.md)
+### [Testing Documentation](./TESTING.md) 🧪 **Comprehensive Testing Guide**
 
-**Purpose**: Comprehensive technical specification for the automated multi-platform testing infrastructure.
+**Purpose**: Complete technical specification for the automated multi-platform testing infrastructure.
 
 **Contents**:
 
 - Detailed test architecture and execution flow with Mermaid diagrams
-- Complete test categories (unit, integration, E2E, security, performance)
-- Test data requirements and generation strategies
-- Platform coverage details (Windows, macOS, Linux)
-- Complete GitHub Actions workflow configurations
-- Step-by-step self-hosted runner setup and configuration
-- In-depth security testing approach
-- Implementation phases and success metrics
-- Maintenance and evolution strategies
+- Test organization (core functionality, security, cross-platform compatibility)
+- Platform coverage details (Windows, macOS, Linux with Node.js versions)
+- Security testing strategies (path traversal, buffer overflow, XML injection, DoS prevention)
+- Test data and CI/CD workflow configuration
+- Complete self-hosted runner setup guides for all platforms
+- Development workflow and maintenance strategies
 
-**Audience**: Developers, DevOps engineers, and project maintainers implementing the testing infrastructure.
+**Audience**: Developers, DevOps engineers, project maintainers, and anyone implementing or working with the testing infrastructure.
 
-**Reading Time**: 30-45 minutes
+**Reading Time**: 20-30 minutes
 
 **Key Highlights**:
 
-- 🎯 95%+ test coverage across all platforms
 - 🔒 Comprehensive security testing including path traversal prevention
 - 📊 Performance benchmarking and tracking
 - 🤖 Fully automated CI/CD with GitHub Actions
 - 🖥️ Support for self-hosted runners on all major operating systems
+- 🧪 Multi-platform matrix testing across 15 configurations
 
 ## Quick Links
 
@@ -74,25 +72,26 @@ Welcome to the qvd4js documentation directory. This folder contains comprehensiv
 
 ## Documentation Structure
 
-```
+```text
 docs/
-├── README.md                           # This file - documentation index
-├── DELIVERABLES.md                     # Summary of what was delivered 📦
-├── TESTING_SUMMARY.md                  # Executive summary - start here! ⭐
-└── MULTI_PLATFORM_TEST_DESIGN.md      # Complete technical specification
+├── README.md                    # This file - documentation index
+├── DELIVERABLES.md              # Summary of what was delivered 📦
+├── TESTING_SUMMARY.md           # Executive summary - start here! ⭐
+├── TESTING.md                   # Complete testing documentation 🧪
+└── GITHUB_PAGES_SETUP.md        # GitHub Pages setup guide
 ```
 
 ## Quick Navigation
 
 - 🆕 New to the project? Start with **[TESTING_SUMMARY.md](./TESTING_SUMMARY.md)**
 - 📦 Want to see what was delivered? Check **[DELIVERABLES.md](./DELIVERABLES.md)**
-- 🔧 Ready to implement? Read **[MULTI_PLATFORM_TEST_DESIGN.md](./MULTI_PLATFORM_TEST_DESIGN.md)**
+- 🔧 Ready to implement or learn about testing? Read **[TESTING.md](./TESTING.md)**
 
 ## For Contributors
 
 If you're contributing to qvd4js, please review:
 
-1. **Multi-Platform Test Design** - Understand the testing infrastructure
+1. **[TESTING.md](./TESTING.md)** - Understand the testing infrastructure
 2. **Main README** - Learn about the library's API and usage
 3. **Existing Tests** in `__tests__/` - See patterns and conventions
 
@@ -108,7 +107,7 @@ If you're using qvd4js in your project:
 
 If you're setting up runners or CI/CD:
 
-1. Read the [Multi-Platform Test Design](./MULTI_PLATFORM_TEST_DESIGN.md)
+1. Read the **[TESTING.md](./TESTING.md)** documentation
 2. Follow the self-hosted runner setup guides
 3. Configure GitHub Actions workflows as documented
 
