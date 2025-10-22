@@ -331,3 +331,6 @@ dist
 ### Environment ###
 .env.local
 .env.*.local
+
+### Benchmarks ###
+benchmark-results.json

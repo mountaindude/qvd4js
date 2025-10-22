@@ -11,7 +11,9 @@
     "build": "babel ./src --out-dir ./dist",
     "lint": "eslint .",
     "test": "jest . --coverage",
-    "clean": "rimraf -rf dist"
+    "clean": "rimraf -rf dist",
+    "bench": "node benchmarks/qvd-parsing.bench.js",
+    "bench:ci": "node benchmarks/qvd-parsing.bench.js > benchmark-results.json"
   },
   "author": {
     "name": "Constantin Müller",
@@ -49,7 +51,8 @@
     "globals": "^16.4.0",
     "jest": "^30.2.0",
     "prettier": "^3.6.2",
-    "rimraf": "^6.0.1"
+    "rimraf": "^6.0.1",
+    "tinybench": "^5.0.1"
   },
   "dependencies": {
     "xml2js": "^0.6.2"
