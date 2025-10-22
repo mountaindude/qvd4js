@@ -249,7 +249,7 @@ export class QvdFileReader {
       const symbolsLength = parseInt(field['Length'], 10);
 
       // Validate offset is a valid number and within bounds
-      if (isNaN(symbolsOffset) || symbolsOffset < 0) {
+      if (isNaN(symbolsOffset) || !Number.isSafeInteger(symbolsOffset) || symbolsOffset < 0) {
         throw new QvdCorruptedError('Invalid symbol offset', {
           field: field['FieldName'],
           offset: symbolsOffset,
@@ -259,7 +259,7 @@ export class QvdFileReader {
       }
 
       // Validate length is a valid number and non-negative
-      if (isNaN(symbolsLength) || symbolsLength < 0) {
+      if (isNaN(symbolsLength) || !Number.isSafeInteger(symbolsLength) || symbolsLength < 0) {
         throw new QvdCorruptedError('Invalid symbol length', {
           field: field['FieldName'],
           length: symbolsLength,
@@ -523,8 +523,17 @@ export class QvdFileReader {
     const recordSize = parseInt(this._header['QvdTableHeader']['RecordByteSize'], 10);
 
     // Validate recordSize
-    if (isNaN(recordSize) || recordSize < 0) {
+    if (isNaN(recordSize) || !Number.isSafeInteger(recordSize) || recordSize < 0) {
       throw new QvdCorruptedError('Invalid record byte size', {
+        recordSize: recordSize,
+        file: this._path,
+        stage: 'parseIndexTable',
+      });
+    }
+
+    // Explicitly disallow zero record size to prevent infinite loops
+    if (recordSize === 0) {
+      throw new QvdCorruptedError('Record byte size cannot be zero', {
         recordSize: recordSize,
         file: this._path,
         stage: 'parseIndexTable',
@@ -544,7 +553,7 @@ export class QvdFileReader {
     const totalRows = parseInt(this._header['QvdTableHeader']['NoOfRecords'], 10);
 
     // Validate totalRows
-    if (isNaN(totalRows) || totalRows < 0) {
+    if (isNaN(totalRows) || !Number.isSafeInteger(totalRows) || totalRows < 0) {
       throw new QvdCorruptedError('Invalid number of records', {
         totalRows: totalRows,
         file: this._path,
@@ -557,7 +566,7 @@ export class QvdFileReader {
     const indexTableLength = parseInt(this._header['QvdTableHeader']['Length'], 10);
 
     // Validate index table length
-    if (isNaN(indexTableLength) || indexTableLength < 0) {
+    if (isNaN(indexTableLength) || !Number.isSafeInteger(indexTableLength) || indexTableLength < 0) {
       throw new QvdCorruptedError('Invalid index table length', {
         length: indexTableLength,
         file: this._path,
@@ -591,10 +600,20 @@ export class QvdFileReader {
       });
     }
 
-    const indexBuffer = this._buffer.subarray(
-      this._indexTableOffset,
-      this._indexTableOffset + indexTableLength + 1,
-    );
+    // Ensure the index table length is sufficient for the number of rows to load
+    const requiredIndexBytes = rowsToLoad * recordSize;
+    if (indexTableLength < requiredIndexBytes) {
+      throw new QvdCorruptedError('Index table length smaller than required', {
+        indexTableLength: indexTableLength,
+        requiredBytes: requiredIndexBytes,
+        rowsToLoad: rowsToLoad,
+        recordSize: recordSize,
+        file: this._path,
+        stage: 'parseIndexTable',
+      });
+    }
+
+    const indexBuffer = this._buffer.subarray(this._indexTableOffset, this._indexTableOffset + indexTableLength + 1);
 
     // Validate BitOffset and BitWidth for all fields before processing
     for (const field of fields) {
@@ -602,7 +621,7 @@ export class QvdFileReader {
       const bitWidth = parseInt(field['BitWidth'], 10);
 
       // Validate bitOffset
-      if (isNaN(bitOffset) || bitOffset < 0) {
+      if (isNaN(bitOffset) || !Number.isSafeInteger(bitOffset) || bitOffset < 0) {
         throw new QvdCorruptedError('Invalid bit offset', {
           field: field['FieldName'],
           bitOffset: bitOffset,
@@ -612,7 +631,7 @@ export class QvdFileReader {
       }
 
       // Validate bitWidth
-      if (isNaN(bitWidth) || bitWidth < 0) {
+      if (isNaN(bitWidth) || !Number.isSafeInteger(bitWidth) || bitWidth < 0) {
         throw new QvdCorruptedError('Invalid bit width', {
           field: field['FieldName'],
           bitWidth: bitWidth,
