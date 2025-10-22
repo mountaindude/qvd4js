@@ -62,7 +62,7 @@ jobs:
         with:
           name: dist
           path: dist/
-          retention-days: 7
+          retention-days: 3
 
   test:
     name: Test - ${{ matrix.platform }} - Node ${{ matrix.node }}
@@ -128,7 +128,9 @@ jobs:
 
       - name: Display system information (Windows)
         if: runner.os == 'Windows'
-        shell: pwsh
+        # Assumes PowerShell is the default shell on Windows self-hosted runners.
+        # If PowerShell Core is used, use 'pwsh' instead of 'powershell'.
+        shell: powershell
         run: |
           "### System Information" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
           "- **Platform**: ${{ matrix.platform }}" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
