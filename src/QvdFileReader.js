@@ -1,11 +1,48 @@
 // @ts-check
 
 import fs from 'fs';
+import path from 'path';
 import xml from 'xml2js';
 import assert from 'assert';
 import {QvdSymbol} from './QvdSymbol.js';
 import {QvdDataFrame} from './QvdDataFrame.js';
-import {QvdParseError, QvdValidationError, QvdCorruptedError} from './QvdErrors.js';
+import {QvdParseError, QvdValidationError, QvdCorruptedError, QvdSecurityError} from './QvdErrors.js';
+
+/**
+ * Validates that a file path does not contain path traversal sequences.
+ * 
+ * @param {string} filePath The path to validate.
+ * @param {string} [allowedDir] Optional allowed directory path. If provided, ensures the resolved path is within this directory.
+ * @throws {QvdSecurityError} If path traversal is detected.
+ */
+function validatePath(filePath, allowedDir = null) {
+  // Normalize the path to resolve '..' and '.' segments
+  const resolvedPath = path.resolve(filePath);
+  
+  // Check for null bytes which can be used in path traversal attacks
+  if (filePath.includes('\0')) {
+    throw new QvdSecurityError('Path traversal detected: Null byte in path', {
+      path: filePath,
+      reason: 'null_byte',
+    });
+  }
+  
+  // If an allowed directory is specified, validate the path is within it
+  if (allowedDir) {
+    const resolvedAllowedDir = path.resolve(allowedDir);
+    
+    if (!resolvedPath.startsWith(resolvedAllowedDir + path.sep) && resolvedPath !== resolvedAllowedDir) {
+      throw new QvdSecurityError('Path traversal detected: Access denied', {
+        path: filePath,
+        resolvedPath: resolvedPath,
+        allowedDir: resolvedAllowedDir,
+        reason: 'outside_allowed_directory',
+      });
+    }
+  }
+  
+  return resolvedPath;
+}
 
 /**
  * Parses a QVD file and loads it into memory.
@@ -14,10 +51,13 @@ export class QvdFileReader {
   /**
    * Constructs a new QVD file parser.
    *
-   * @param {string} path The path to the QVD file to load.
+   * @param {string} filePath The path to the QVD file to load.
+   * @param {Object} [options={}] Options for the reader.
+   * @param {string} [options.allowedDir] Optional allowed directory path. If provided, the file path must be within this directory.
    */
-  constructor(path) {
-    this._path = path;
+  constructor(filePath, options = {}) {
+    const {allowedDir} = options;
+    this._path = validatePath(filePath, allowedDir);
     this._buffer = null;
     this._headerOffset = null;
     this._symbolTableOffset = null;

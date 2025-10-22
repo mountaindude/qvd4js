@@ -478,10 +478,13 @@ export class QvdDataFrame {
    * Persists the data frame to a QVD file.
    *
    * @param {string} path The path to the QVD file.
+   * @param {Object} [options] Optional writing options.
+   * @param {string} [options.allowedDir] Optional allowed directory path. If provided, the file path must be within this directory.
    */
-  async toQvd(path) {
+  async toQvd(path, options = {}) {
     const {QvdFileWriter} = await import('./QvdFileWriter.js');
-    new QvdFileWriter(path, this).save();
+    const writerOptions = {allowedDir: options.allowedDir};
+    new QvdFileWriter(path, this, writerOptions).save();
   }
 
   /**
@@ -490,11 +493,13 @@ export class QvdDataFrame {
    * @param {string} path The path to the QVD file.
    * @param {Object} [options] Optional loading options.
    * @param {number|null} [options.maxRows] The maximum number of rows to load. If not specified, all rows are loaded.
+   * @param {string} [options.allowedDir] Optional allowed directory path. If provided, the file path must be within this directory.
    * @return {Promise<QvdDataFrame>} The data frame of the QVD file.
    */
   static async fromQvd(path, options = {}) {
     const {QvdFileReader} = await import('./QvdFileReader.js');
-    return await new QvdFileReader(path).load(options.maxRows !== undefined ? options.maxRows : null);
+    const readerOptions = {allowedDir: options.allowedDir};
+    return await new QvdFileReader(path, readerOptions).load(options.maxRows !== undefined ? options.maxRows : null);
   }
 
   /**
