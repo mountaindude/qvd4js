@@ -17,7 +17,7 @@
   "scripts": {
     "build": "tsup",
     "lint": "eslint .",
-    "test": "NODE_OPTIONS=--experimental-vm-modules jest . --coverage",
+    "test": "cross-env NODE_OPTIONS=--experimental-vm-modules jest . --coverage",
     "clean": "rimraf -rf dist",
     "bench": "node benchmarks/qvd-parsing.bench.js",
     "bench:ci": "node benchmarks/qvd-parsing.bench.js --ci"
@@ -50,6 +50,7 @@
   ],
   "license": "MIT",
   "devDependencies": {
+    "cross-env": "^10.1.0",
     "eslint": "^9.38.0",
     "eslint-config-google": "^0.14.0",
     "eslint-config-prettier": "^10.1.8",
