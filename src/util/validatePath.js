@@ -30,7 +30,13 @@ export function validatePath(filePath, allowedDir) {
 
   // Ensure the resolved path is within the allowed directory
   // Use path.sep to ensure proper directory boundary checking across platforms
-  if (!resolvedPath.startsWith(resolvedBaseDir + path.sep) && resolvedPath !== resolvedBaseDir) {
+  // On Windows and macOS (default APFS), file systems are case-insensitive,
+  // so we need case-insensitive comparison. On Linux, use case-sensitive comparison.
+  const isCaseInsensitiveFS = process.platform === 'win32' || process.platform === 'darwin';
+  const baseForComparison = isCaseInsensitiveFS ? resolvedBaseDir.toLowerCase() : resolvedBaseDir;
+  const pathForComparison = isCaseInsensitiveFS ? resolvedPath.toLowerCase() : resolvedPath;
+
+  if (!pathForComparison.startsWith(baseForComparison + path.sep) && pathForComparison !== baseForComparison) {
     throw new QvdSecurityError('Path traversal detected: Access denied', {
       path: filePath,
       resolvedPath: resolvedPath,
