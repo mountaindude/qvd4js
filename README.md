@@ -11,14 +11,16 @@ structure and vica versa. The library is written to be used in a Node.js environ
 - [qvd4js](#qvd4js)
   - [Install](#install)
   - [Usage](#usage)
+    - [Lazy Loading](#lazy-loading)
     - [Working with Metadata](#working-with-metadata)
+    - [Security Considerations](#security-considerations)
   - [QVD File Format](#qvd-file-format)
     - [XML Header](#xml-header)
     - [Symbol Table](#symbol-table)
     - [Index Table](#index-table)
   - [API Documentation](#api-documentation)
     - [QvdDataFrame](#qvddataframe)
-      - [`static fromQvd(path: string): Promise<QvdDataFrame>`](#static-fromqvdpath-string-promiseqvddataframe)
+      - [`static fromQvd(path: string, options?: object): Promise<QvdDataFrame>`](#static-fromqvdpath-string-options-object-promiseqvddataframe)
       - [`static fromDict(dict: object): Promise<QvdDataFrame>`](#static-fromdictdict-object-promiseqvddataframe)
       - [`head(n: number): QvdDataFrame`](#headn-number-qvddataframe)
       - [`tail(n: number): QvdDataFrame`](#tailn-number-qvddataframe)
@@ -26,7 +28,7 @@ structure and vica versa. The library is written to be used in a Node.js environ
       - [`at(row: number, column: string): any`](#atrow-number-column-string-any)
       - [`select(...args: string): QvdDataFrame`](#selectargs-string-qvddataframe)
       - [`toDict(): Promise<object>`](#todict-promiseobject)
-      - [`toQvd(path: string): Promise<void>`](#toqvdpath-string-promisevoid)
+      - [`toQvd(path: string, options?: object): Promise<void>`](#toqvdpath-string-options-object-promisevoid)
       - [`getFieldMetadata(fieldName: string): object | null`](#getfieldmetadatafieldname-string-object--null)
       - [`getAllFieldMetadata(): object[]`](#getallfieldmetadata-object)
       - [`setFileMetadata(metadata: object): void`](#setfilemetadatametadata-object-void)
@@ -75,11 +77,13 @@ console.log(df.shape); // [1000, numberOfColumns]
 ```
 
 **How it works:**
+
 - The library reads only the header, symbol table, and the first N rows from the index table
 - For a 5 GB file with `maxRows: 25`, only about 35-40% of the file is read from disk (~1.75-2 GB)
 - This provides significant memory savings and faster loading times for large files
 
 This is particularly useful for:
+
 - Previewing data from very large QVD files without loading the entire file into memory
 - Reducing memory consumption when working with multi-gigabyte files
 - Faster loading times when you only need a subset of the data
@@ -125,6 +129,89 @@ df.setFieldMetadata('ProductKey', {
 
 // Metadata is preserved when writing
 await df.toQvd('path/to/output.qvd');
+```
+
+### Security Considerations
+
+The library includes built-in protection against path traversal attacks.
+
+**Default Security Behavior:**
+
+By default, all file operations are restricted to the **current working directory (CWD)** and its subdirectories. This means:
+
+- ✅ Files within CWD can be accessed: `./data/file.qvd` or `data/file.qvd`
+- ❌ Files outside CWD are blocked: `/etc/passwd` or `../../../sensitive.qvd`
+- ❌ Path traversal attempts are detected and blocked
+
+This default behavior protects against path traversal attacks without requiring additional configuration.
+
+**Custom Directory Restriction:**
+
+You can explicitly specify a different base directory using the `allowedDir` option:
+
+```javascript
+import {QvdDataFrame} from 'qvd4js';
+
+// Restrict reading to a specific directory
+const allowedDataDir = '/var/data/qvd-files';
+const df = await QvdDataFrame.fromQvd('reports/sales.qvd', {
+  allowedDir: allowedDataDir,
+});
+
+// Restrict writing to a specific directory
+const allowedOutputDir = '/var/output';
+await df.toQvd('processed/sales-filtered.qvd', {
+  allowedDir: allowedOutputDir,
+});
+```
+
+**Security Features:**
+
+- **Path Normalization**: All paths are automatically normalized using `path.resolve()` to eliminate `..` and `.` segments
+- **Null Byte Protection**: Detects and blocks null byte injection attempts
+- **Default CWD Restriction**: By default, file operations are restricted to the current working directory (CWD) and its subdirectories to prevent path traversal attacks
+- **Custom Directory Restriction**: Optional `allowedDir` parameter allows you to specify a different base directory
+- **Security Errors**: Throws `QvdSecurityError` with detailed context when security violations are detected
+
+**Best Practices:**
+
+1. **Understand default security**: Files are restricted to CWD by default - no additional configuration needed for basic protection
+2. **Use explicit `allowedDir` in production**: When your application's CWD differs from your data directory, specify an explicit `allowedDir` for user-provided file paths
+3. **Validate user input**: Even with built-in protections, validate and sanitize any user-provided paths
+4. **Principle of least privilege**: Use the most restrictive `allowedDir` possible for your use case
+5. **Monitor security errors**: Log and monitor `QvdSecurityError` exceptions as they may indicate attack attempts
+
+**Examples:**
+
+```javascript
+import {QvdDataFrame, QvdSecurityError} from 'qvd4js';
+
+// Example 1: Default behavior (restricted to CWD)
+// This is safe by default - no path traversal possible
+try {
+  const df = await QvdDataFrame.fromQvd('data/file.qvd'); // ✅ Works (within CWD)
+  const df2 = await QvdDataFrame.fromQvd('../../../etc/passwd'); // ❌ Throws QvdSecurityError
+} catch (error) {
+  if (error instanceof QvdSecurityError) {
+    console.error('Path traversal blocked:', error.message);
+  }
+}
+
+// Example 2: Custom allowedDir for specific use cases
+try {
+  const df = await QvdDataFrame.fromQvd(userProvidedPath, {
+    allowedDir: '/safe/directory',
+  });
+  // Process data...
+} catch (error) {
+  if (error instanceof QvdSecurityError) {
+    console.error('Security violation detected:', error.message);
+    console.error('Context:', error.context);
+    // Log security incident
+  } else {
+    throw error;
+  }
+}
 ```
 
 ## QVD File Format
@@ -186,17 +273,25 @@ The static method `QvdDataFrame.fromQvd` loads a QVD file from the given path an
 to a `QvdDataFrame` instance.
 
 **Parameters:**
+
 - `path` (string): The path to the QVD file.
 - `options` (object, optional): Loading options
   - `maxRows` (number, optional): Maximum number of rows to load. If not specified, all rows are loaded. This is useful for loading only a subset of data from large QVD files to improve performance and reduce memory usage.
+  - `allowedDir` (string, optional): Base directory for file access validation. Defaults to current working directory (CWD). The file path must resolve to a location within this directory to prevent path traversal attacks. Set to a specific directory in production environments with user-provided paths.
 
 **Example:**
+
 ```javascript
 // Load all rows (default behavior)
 const df = await QvdDataFrame.fromQvd('path/to/file.qvd');
 
 // Load only the first 1000 rows
 const dfLazy = await QvdDataFrame.fromQvd('path/to/file.qvd', {maxRows: 1000});
+
+// Load with security restriction (recommended for production)
+const dfSecure = await QvdDataFrame.fromQvd('reports/sales.qvd', {
+  allowedDir: '/var/data/qvd-files',
+});
 ```
 
 #### `static fromDict(dict: object): Promise<QvdDataFrame>`
@@ -233,9 +328,27 @@ actual data as properties. The columns property is an array of strings that cont
 fields in the QVD file. The data property is an array of arrays that contains the actual data records.
 The order of the values in the inner arrays corresponds to the order of the fields in the QVD file.
 
-#### `toQvd(path: string): Promise<void>`
+#### `toQvd(path: string, options?: object): Promise<void>`
 
 The method `toQvd` writes the data frame to a QVD file at the specified path.
+
+**Parameters:**
+
+- `path` (string): The path where the QVD file should be written.
+- `options` (object, optional): Writing options
+  - `allowedDir` (string, optional): Base directory for file write validation. Defaults to current working directory (CWD). The file path must resolve to a location within this directory to prevent path traversal attacks. Set to a specific directory in production environments with user-provided paths.
+
+**Example:**
+
+```javascript
+// Write to file (default behavior)
+await df.toQvd('output/data.qvd');
+
+// Write with security restriction (recommended for production)
+await df.toQvd('processed/data.qvd', {
+  allowedDir: '/var/output/qvd-files',
+});
+```
 
 #### `getFieldMetadata(fieldName: string): object | null`
 

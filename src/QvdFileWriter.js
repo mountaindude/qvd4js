@@ -6,7 +6,7 @@ import crypto from 'crypto';
 import xml from 'xml2js';
 import assert from 'assert';
 import {QvdSymbol} from './QvdSymbol.js';
-import {QvdCorruptedError} from './QvdErrors.js';
+import {validatePath} from './util/validatePath.js';
 
 /**
  * @typedef {import('./QvdDataFrame.js').QvdDataFrame} QvdDataFrame
@@ -19,11 +19,15 @@ export class QvdFileWriter {
   /**
    * Constructs a new QVD file writer.
    *
-   * @param {string} path The path to the QVD file to write.
+   * @param {string} filePath The path to the QVD file to write.
    * @param {QvdDataFrame} df The data frame to write to the QVD file.
+   * @param {Object} [options={}] Options for the writer.
+   * @param {string} [options.allowedDir] Optional allowed directory path. If provided, the file
+   *   path must be within this directory. Defaults to current working directory.
    */
-  constructor(path, df) {
-    this._path = path;
+  constructor(filePath, df, options = {}) {
+    const {allowedDir} = options;
+    this._path = validatePath(filePath, allowedDir);
     this._df = df;
     this._header = null;
     this._symbolBuffer = null;

@@ -6,6 +6,7 @@ import assert from 'assert';
 import {QvdSymbol} from './QvdSymbol.js';
 import {QvdDataFrame} from './QvdDataFrame.js';
 import {QvdParseError, QvdValidationError, QvdCorruptedError} from './QvdErrors.js';
+import {validatePath} from './util/validatePath.js';
 
 /**
  * Parses a QVD file and loads it into memory.
@@ -14,10 +15,14 @@ export class QvdFileReader {
   /**
    * Constructs a new QVD file parser.
    *
-   * @param {string} path The path to the QVD file to load.
+   * @param {string} filePath The path to the QVD file to load.
+   * @param {Object} [options={}] Options for the reader.
+   * @param {string} [options.allowedDir] Optional allowed directory path. If provided, the file
+   *   path must be within this directory. Defaults to current working directory.
    */
-  constructor(path) {
-    this._path = path;
+  constructor(filePath, options = {}) {
+    const {allowedDir} = options;
+    this._path = validatePath(filePath, allowedDir);
     this._buffer = null;
     this._headerOffset = null;
     this._symbolTableOffset = null;

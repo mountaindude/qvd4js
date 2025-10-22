@@ -34,14 +34,14 @@ describe('Backwards Compatibility Tests', () => {
 
   test('QvdDataFrame instances should have all expected methods and properties', async () => {
     const df = await QvdDataFrame.fromQvd(path.join(__dirname, 'data/small.qvd'));
-    
+
     // Properties
     expect(df.data).toBeDefined();
     expect(df.columns).toBeDefined();
     expect(df.shape).toBeDefined();
     expect(df.metadata).toBeDefined();
     expect(df.fileMetadata).toBeDefined();
-    
+
     // Methods
     expect(typeof df.head).toBe('function');
     expect(typeof df.tail).toBe('function');
@@ -65,9 +65,12 @@ describe('Backwards Compatibility Tests', () => {
   test('QvdFileWriter class should be instantiable and have save method', async () => {
     const df = await QvdDataFrame.fromDict({
       columns: ['A', 'B'],
-      data: [[1, 2], [3, 4]],
+      data: [
+        [1, 2],
+        [3, 4],
+      ],
     });
-    const writer = new QvdFileWriter('/tmp/test.qvd', df);
+    const writer = new QvdFileWriter('/tmp/test.qvd', df, {allowedDir: '/tmp'});
     expect(writer).toBeDefined();
     expect(typeof writer.save).toBe('function');
   });
@@ -76,16 +79,16 @@ describe('Backwards Compatibility Tests', () => {
     // Read
     const df = await QvdDataFrame.fromQvd(path.join(__dirname, 'data/small.qvd'));
     expect(df.shape[0]).toBe(606);
-    
+
     // Manipulate
     const subset = df.head(10);
     expect(subset.shape[0]).toBe(10);
-    
+
     const selected = subset.select('ProductKey', 'ProductName');
     expect(selected.columns.length).toBe(2);
     expect(selected.columns).toContain('ProductKey');
     expect(selected.columns).toContain('ProductName');
-    
+
     // Convert to dict
     const dict = await selected.toDict();
     expect(dict.columns).toBeDefined();
@@ -97,10 +100,10 @@ describe('Backwards Compatibility Tests', () => {
     const symbol1 = QvdSymbol.fromIntValue(42);
     const symbol2 = QvdSymbol.fromIntValue(42);
     const symbol3 = QvdSymbol.fromIntValue(43);
-    
+
     expect(symbol1.equals(symbol2)).toBe(true);
     expect(symbol1.equals(symbol3)).toBe(false);
-    
+
     const dualSymbol = QvdSymbol.fromDualIntValue(10, 'ten');
     expect(dualSymbol.intValue).toBe(10);
     expect(dualSymbol.stringValue).toBe('ten');
