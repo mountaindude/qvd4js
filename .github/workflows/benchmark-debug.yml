@@ -1,0 +1,98 @@
+name: Benchmark Debug (Fast Feedback)
+
+on:
+    workflow_dispatch:
+        inputs:
+            platform:
+                description: 'Platform to test'
+                required: true
+                type: choice
+                options:
+                    - 'Linux'
+                    - 'Windows'
+                    - 'macOS-Intel'
+                    - 'macOS-ARM'
+                default: 'Linux'
+            node_version:
+                description: 'Node.js version'
+                required: true
+                type: choice
+                options:
+                    - '20.x'
+                    - '22.x'
+                    - '24.x'
+                default: '20.x'
+
+jobs:
+    benchmark-debug:
+        name: Debug Benchmark - ${{ github.event.inputs.platform }} - Node ${{ github.event.inputs.node_version }}
+        runs-on: ${{ github.event.inputs.platform == 'Linux' && 'ubuntu-22.04' || github.event.inputs.platform == 'Windows' && fromJSON('["self-hosted", "windows", "x64"]') || github.event.inputs.platform == 'macOS-Intel' && fromJSON('["self-hosted", "macos", "x64"]') || fromJSON('["self-hosted", "macos", "arm64"]') }}
+        permissions:
+            contents: write
+            deployments: write
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v4
+
+            - name: Setup Node.js
+              uses: actions/setup-node@v4
+              with:
+                  node-version: ${{ github.event.inputs.node_version }}
+                  cache: 'npm'
+
+            - name: Display system information (Windows)
+              if: github.event.inputs.platform == 'Windows'
+              shell: powershell
+              run: |
+                  "### System Information" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
+                  "- **Platform**: ${{ github.event.inputs.platform }}" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
+                  "- **Node.js**: $(node --version)" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
+                  "- **npm**: $(npm --version)" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
+
+            - name: Display system information (Unix)
+              if: github.event.inputs.platform != 'Windows'
+              shell: bash
+              run: |
+                  echo "### System Information" >> $GITHUB_STEP_SUMMARY
+                  echo "- **Platform**: ${{ github.event.inputs.platform }}" >> $GITHUB_STEP_SUMMARY
+                  echo "- **Node.js**: $(node --version)" >> $GITHUB_STEP_SUMMARY
+                  echo "- **npm**: $(npm --version)" >> $GITHUB_STEP_SUMMARY
+                  echo "- **OS**: $(uname -s)" >> $GITHUB_STEP_SUMMARY
+                  echo "- **Architecture**: $(uname -m)" >> $GITHUB_STEP_SUMMARY
+
+            - name: Install dependencies
+              run: npm ci
+
+            - name: Run benchmarks
+              run: npm run bench:ci
+
+            - name: Display benchmark results
+              run: |
+                  echo "### 📊 Benchmark Results" >> $GITHUB_STEP_SUMMARY
+                  echo "\`\`\`json" >> $GITHUB_STEP_SUMMARY
+                  cat benchmark-results.json >> $GITHUB_STEP_SUMMARY
+                  echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+
+            - name: Store benchmark result to GitHub Pages
+              uses: benchmark-action/github-action-benchmark@v1
+              with:
+                  name: qvd4js Benchmark - ${{ github.event.inputs.platform }} - Node ${{ github.event.inputs.node_version }} [DEBUG]
+                  tool: 'customBiggerIsBetter'
+                  output-file-path: benchmark-results.json
+                  github-token: ${{ secrets.GITHUB_TOKEN }}
+                  auto-push: true
+                  gh-pages-branch: gh-pages
+                  benchmark-data-dir-path: benchmarks-debug/${{ github.event.inputs.platform }}-node${{ github.event.inputs.node_version }}
+                  alert-threshold: '150%'
+                  fail-on-alert: false
+                  max-items-in-chart: 30
+                  comment-always: false
+                  summary-always: true
+
+            - name: Add link to GitHub Pages
+              run: |
+                  echo "### 🔗 View Results" >> $GITHUB_STEP_SUMMARY
+                  echo "Benchmark results have been published to GitHub Pages:" >> $GITHUB_STEP_SUMMARY
+                  echo "https://ptarmiganlabs.github.io/qvd4js/benchmarks-debug/${{ github.event.inputs.platform }}-node${{ github.event.inputs.node_version }}" >> $GITHUB_STEP_SUMMARY
+                  echo "" >> $GITHUB_STEP_SUMMARY
+                  echo "**Note:** This is a debug version. Production results are in the main benchmarks directory." >> $GITHUB_STEP_SUMMARY
