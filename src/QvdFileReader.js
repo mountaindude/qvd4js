@@ -115,10 +115,13 @@ export class QvdFileReader {
 
     // Now read the exact portion we need from the file
     const fd = await fs.promises.open(this._path, 'r');
-    this._buffer = Buffer.allocUnsafe(totalBytesToRead);
-    // @ts-ignore - Buffer type compatibility
-    await fd.read(this._buffer, 0, totalBytesToRead, 0);
-    await fd.close();
+    try {
+      this._buffer = Buffer.allocUnsafe(totalBytesToRead);
+      // @ts-ignore - Buffer type compatibility
+      await fd.read(this._buffer, 0, totalBytesToRead, 0);
+    } finally {
+      await fd.close();
+    }
   }
 
   /**
