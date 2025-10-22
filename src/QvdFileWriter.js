@@ -59,12 +59,7 @@ export class QvdFileWriter {
       fd = await fs.promises.open(this._path, 'w');
       await fd.write(headerBuffer, 0, headerBuffer.length, 0);
       await fd.write(this._symbolBuffer, 0, this._symbolBuffer.length, headerBuffer.length);
-      await fd.write(
-        this._indexBuffer,
-        0,
-        this._indexBuffer.length,
-        headerBuffer.length + this._symbolBuffer.length,
-      );
+      await fd.write(this._indexBuffer, 0, this._indexBuffer.length, headerBuffer.length + this._symbolBuffer.length);
     } finally {
       if (fd) {
         await fd.close();
@@ -235,7 +230,7 @@ export class QvdFileWriter {
             s.equals(symbol),
           );
           // In order to represent None values, the indices are shifted by the bias value of the column
-          return fieldContainsNull ? (symbolIndex ?? 0) + 2 : symbolIndex ?? 0;
+          return fieldContainsNull ? (symbolIndex ?? 0) + 2 : (symbolIndex ?? 0);
         }
       });
 

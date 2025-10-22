@@ -306,7 +306,7 @@ export class QvdFileReader {
             if (pointer + 4 > symbolBuffer.length) {
               throw new QvdCorruptedError('Buffer overflow reading integer symbol', {
                 field: field['FieldName'],
-                pointer: pointer,
+                pointer,
                 bufferSize: symbolBuffer.length,
                 file: this._path,
                 stage: 'parseSymbolTable',
@@ -326,7 +326,7 @@ export class QvdFileReader {
             if (pointer + 8 > symbolBuffer.length) {
               throw new QvdCorruptedError('Buffer overflow reading double symbol', {
                 field: field['FieldName'],
-                pointer: pointer,
+                pointer,
                 bufferSize: symbolBuffer.length,
                 file: this._path,
                 stage: 'parseSymbolTable',
@@ -361,7 +361,7 @@ export class QvdFileReader {
             if (pointer >= symbolBuffer.length) {
               throw new QvdCorruptedError('String symbol not null-terminated', {
                 field: field['FieldName'],
-                pointer: pointer,
+                pointer,
                 bufferSize: symbolBuffer.length,
                 file: this._path,
                 stage: 'parseSymbolTable',
@@ -379,7 +379,7 @@ export class QvdFileReader {
             if (pointer + 4 > symbolBuffer.length) {
               throw new QvdCorruptedError('Buffer overflow reading dual integer symbol', {
                 field: field['FieldName'],
-                pointer: pointer,
+                pointer,
                 bufferSize: symbolBuffer.length,
                 file: this._path,
                 stage: 'parseSymbolTable',
@@ -410,7 +410,7 @@ export class QvdFileReader {
             if (pointer >= symbolBuffer.length) {
               throw new QvdCorruptedError('Dual string symbol not null-terminated', {
                 field: field['FieldName'],
-                pointer: pointer,
+                pointer,
                 bufferSize: symbolBuffer.length,
                 file: this._path,
                 stage: 'parseSymbolTable',
@@ -429,7 +429,7 @@ export class QvdFileReader {
             if (pointer + 8 > symbolBuffer.length) {
               throw new QvdCorruptedError('Buffer overflow reading dual double symbol', {
                 field: field['FieldName'],
-                pointer: pointer,
+                pointer,
                 bufferSize: symbolBuffer.length,
                 file: this._path,
                 stage: 'parseSymbolTable',
@@ -460,7 +460,7 @@ export class QvdFileReader {
             if (pointer >= symbolBuffer.length) {
               throw new QvdCorruptedError('Dual string symbol not null-terminated', {
                 field: field['FieldName'],
-                pointer: pointer,
+                pointer,
                 bufferSize: symbolBuffer.length,
                 file: this._path,
                 stage: 'parseSymbolTable',
@@ -531,7 +531,7 @@ export class QvdFileReader {
     // Validate recordSize
     if (isNaN(recordSize) || !Number.isSafeInteger(recordSize) || recordSize < 0) {
       throw new QvdCorruptedError('Invalid record byte size', {
-        recordSize: recordSize,
+        recordSize,
         file: this._path,
         stage: 'parseIndexTable',
       });
@@ -540,7 +540,7 @@ export class QvdFileReader {
     // Explicitly disallow zero record size to prevent infinite loops
     if (recordSize === 0) {
       throw new QvdCorruptedError('Record byte size cannot be zero', {
-        recordSize: recordSize,
+        recordSize,
         file: this._path,
         stage: 'parseIndexTable',
       });
@@ -549,7 +549,7 @@ export class QvdFileReader {
     // Validate recordSize is reasonable (max 1MB per record)
     if (recordSize > 1048576) {
       throw new QvdCorruptedError('Record byte size exceeds maximum', {
-        recordSize: recordSize,
+        recordSize,
         maxSize: 1048576,
         file: this._path,
         stage: 'parseIndexTable',
@@ -561,7 +561,7 @@ export class QvdFileReader {
     // Validate totalRows
     if (isNaN(totalRows) || !Number.isSafeInteger(totalRows) || totalRows < 0) {
       throw new QvdCorruptedError('Invalid number of records', {
-        totalRows: totalRows,
+        totalRows,
         file: this._path,
         stage: 'parseIndexTable',
       });
@@ -599,7 +599,7 @@ export class QvdFileReader {
     const maxReasonableOverage = 100 * 1024 * 1024;
     if (indexTableLength > this._buffer.length + maxReasonableOverage) {
       throw new QvdCorruptedError('Index table length unreasonably large', {
-        indexTableLength: indexTableLength,
+        indexTableLength,
         bufferSize: this._buffer.length,
         file: this._path,
         stage: 'parseIndexTable',
@@ -610,10 +610,10 @@ export class QvdFileReader {
     const requiredIndexBytes = rowsToLoad * recordSize;
     if (indexTableLength < requiredIndexBytes) {
       throw new QvdCorruptedError('Index table length smaller than required', {
-        indexTableLength: indexTableLength,
+        indexTableLength,
         requiredBytes: requiredIndexBytes,
-        rowsToLoad: rowsToLoad,
-        recordSize: recordSize,
+        rowsToLoad,
+        recordSize,
         file: this._path,
         stage: 'parseIndexTable',
       });
@@ -630,7 +630,7 @@ export class QvdFileReader {
       if (isNaN(bitOffset) || !Number.isSafeInteger(bitOffset) || bitOffset < 0) {
         throw new QvdCorruptedError('Invalid bit offset', {
           field: field['FieldName'],
-          bitOffset: bitOffset,
+          bitOffset,
           file: this._path,
           stage: 'parseIndexTable',
         });
@@ -640,7 +640,7 @@ export class QvdFileReader {
       if (isNaN(bitWidth) || !Number.isSafeInteger(bitWidth) || bitWidth < 0) {
         throw new QvdCorruptedError('Invalid bit width', {
           field: field['FieldName'],
-          bitWidth: bitWidth,
+          bitWidth,
           file: this._path,
           stage: 'parseIndexTable',
         });
@@ -651,9 +651,9 @@ export class QvdFileReader {
       if (bitOffset + bitWidth > recordSizeInBits) {
         throw new QvdCorruptedError('Bit field extends beyond record size', {
           field: field['FieldName'],
-          bitOffset: bitOffset,
-          bitWidth: bitWidth,
-          recordSizeInBits: recordSizeInBits,
+          bitOffset,
+          bitWidth,
+          recordSizeInBits,
           file: this._path,
           stage: 'parseIndexTable',
         });
@@ -671,8 +671,8 @@ export class QvdFileReader {
       // Validate we have enough bytes for this record
       if (pointer + recordSize > indexBuffer.length) {
         throw new QvdCorruptedError('Buffer overflow reading index table record', {
-          pointer: pointer,
-          recordSize: recordSize,
+          pointer,
+          recordSize,
           bufferSize: indexBuffer.length,
           file: this._path,
           stage: 'parseIndexTable',
@@ -740,7 +740,7 @@ export class QvdFileReader {
     const getRow = (index) => {
       if (!this._indexTable || index >= this._indexTable.length) {
         throw new QvdValidationError('Row index out of bounds', {
-          index: index,
+          index,
           max: this._indexTable ? this._indexTable.length - 1 : -1,
           file: this._path,
         });

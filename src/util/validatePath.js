@@ -39,7 +39,7 @@ export function validatePath(filePath, allowedDir) {
   if (!pathForComparison.startsWith(baseForComparison + path.sep) && pathForComparison !== baseForComparison) {
     throw new QvdSecurityError('Path traversal detected: Access denied', {
       path: filePath,
-      resolvedPath: resolvedPath,
+      resolvedPath,
       allowedDir: resolvedBaseDir,
       reason: 'outside_allowed_directory',
     });

@@ -1,6 +1,5 @@
 // @ts-check
 
-import assert from 'assert';
 import {QvdValidationError} from './QvdErrors.js';
 
 /**
@@ -399,7 +398,7 @@ export class QvdDataFrame {
       }
       if (index < 0 || index >= this._data.length) {
         throw new QvdValidationError(`Row index ${index} out of bounds`, {
-          index: index,
+          index,
           validRange: [0, this._data.length - 1],
           dataLength: this._data.length,
         });
@@ -436,7 +435,7 @@ export class QvdDataFrame {
     }
     if (!this._columns.includes(column)) {
       throw new QvdValidationError(`Column '${column}' does not exist`, {
-        column: column,
+        column,
         availableColumns: this._columns,
       });
     }
@@ -454,7 +453,7 @@ export class QvdDataFrame {
     for (const column of args) {
       if (!this._columns.includes(column)) {
         throw new QvdValidationError(`Column '${column}' does not exist`, {
-          column: column,
+          column,
           availableColumns: this._columns,
         });
       }
@@ -511,12 +510,12 @@ export class QvdDataFrame {
   static async fromDict(data) {
     if (!data.columns) {
       throw new QvdValidationError('The dictionary to construct the data frame from does not contain any columns.', {
-        data: data,
+        data,
       });
     }
     if (!data.data) {
       throw new QvdValidationError('The dictionary to construct the data frame from does not contain any data.', {
-        data: data,
+        data,
       });
     }
 
