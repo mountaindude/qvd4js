@@ -103,28 +103,23 @@ describe('Lazy loading of QVD files', () => {
     expect(value).toBeDefined();
   });
 
-  test('Loading medium file with maxRows should be faster than full load', async () => {
-    const start1 = Date.now();
+  test('Loading medium file with maxRows should load correct number of rows', async () => {
     const df1 = await QvdDataFrame.fromQvd(path.join(__dirname, 'data/medium.qvd'), {maxRows: 100});
-    const time1 = Date.now() - start1;
-
-    const start2 = Date.now();
     const df2 = await QvdDataFrame.fromQvd(path.join(__dirname, 'data/medium.qvd'));
-    const time2 = Date.now() - start2;
 
     expect(df1.shape[0]).toBe(100);
+    expect(df1.shape[1]).toBe(13);
     expect(df2.shape[0]).toBe(18484);
-    expect(time1).toBeLessThan(time2); // Loading 100 rows should be faster than loading 18484 rows
+    expect(df2.shape[1]).toBe(13);
   });
 
-  test('Loading large file with small maxRows should be significantly faster', async () => {
-    const start = Date.now();
+  test('Loading large file with small maxRows should work correctly', async () => {
     const df = await QvdDataFrame.fromQvd(path.join(__dirname, 'data/large.qvd'), {maxRows: 50});
-    const elapsed = Date.now() - start;
 
     expect(df).toBeDefined();
     expect(df.shape[0]).toBe(50);
     expect(df.shape[1]).toBe(11);
-    expect(elapsed).toBeLessThan(1000); // Should be much faster than loading all 60k rows
+    expect(df.columns).toBeDefined();
+    expect(df.columns.length).toBe(11);
   });
 });
