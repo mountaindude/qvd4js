@@ -193,18 +193,28 @@ jobs:
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
         uses: benchmark-action/github-action-benchmark@v1
         with:
+          # Name of the benchmark - must be unique for each platform/node combination
+          name: 'qvd4js Benchmark - ${{ matrix.platform }} - Node ${{ matrix.node }}'
+          # Tool type - customBiggerIsBetter for ops/sec (higher is better)
           tool: 'customBiggerIsBetter'
+          # Path to the benchmark output file
           output-file-path: benchmark-results.json
+          # GitHub API token for pushing to gh-pages
           github-token: ${{ secrets.GITHUB_TOKEN }}
+          # Automatically push results to gh-pages branch
           auto-push: true
+          # Alert when performance degrades by more than 150%
           alert-threshold: '150%'
+          # Post a comment on the commit when alert is triggered
           comment-on-alert: true
+          # Don't fail the workflow on performance regression
           fail-on-alert: false
+          # Always show benchmark summary in job output
           summary-always: true
+          # Target branch for GitHub Pages
           gh-pages-branch: gh-pages
+          # Directory path where benchmark data will be stored (unique per platform/node)
           benchmark-data-dir-path: 'benchmarks/${{ matrix.platform }}-node${{ matrix.node }}'
-          # Add extra benchmark info
-          external-data-json-path: ./cache/benchmark-data.json
 
   security-scan:
     name: Security Scan
