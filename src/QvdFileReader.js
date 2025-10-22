@@ -243,6 +243,44 @@ export class QvdFileReader {
      * table, are also defined in the header.
      */
 
+    // Validate all field metadata before processing to prevent buffer overflow attacks
+    for (const field of fields) {
+      const symbolsOffset = parseInt(field['Offset'], 10);
+      const symbolsLength = parseInt(field['Length'], 10);
+
+      // Validate offset is a valid number and within bounds
+      if (isNaN(symbolsOffset) || symbolsOffset < 0) {
+        throw new QvdCorruptedError('Invalid symbol offset', {
+          field: field['FieldName'],
+          offset: symbolsOffset,
+          file: this._path,
+          stage: 'parseSymbolTable',
+        });
+      }
+
+      // Validate length is a valid number and non-negative
+      if (isNaN(symbolsLength) || symbolsLength < 0) {
+        throw new QvdCorruptedError('Invalid symbol length', {
+          field: field['FieldName'],
+          length: symbolsLength,
+          file: this._path,
+          stage: 'parseSymbolTable',
+        });
+      }
+
+      // Validate that offset + length doesn't exceed buffer size
+      if (symbolsOffset + symbolsLength > symbolBuffer.length) {
+        throw new QvdCorruptedError('Symbol data extends beyond buffer', {
+          field: field['FieldName'],
+          offset: symbolsOffset,
+          length: symbolsLength,
+          bufferSize: symbolBuffer.length,
+          file: this._path,
+          stage: 'parseSymbolTable',
+        });
+      }
+    }
+
     // Parse all possible symbols of each field/column
     this._symbolTable = fields.map((/** @type {any} */ field) => {
       const symbolsOffset = parseInt(field['Offset'], 10); // Offset of the column's symbol area in the symbol table
@@ -258,6 +296,16 @@ export class QvdFileReader {
         switch (typeByte) {
           case 1: {
             // Integer value (4 Bytes)
+            // Validate we have enough bytes for an integer
+            if (pointer + 4 > symbolBuffer.length) {
+              throw new QvdCorruptedError('Buffer overflow reading integer symbol', {
+                field: field['FieldName'],
+                pointer: pointer,
+                bufferSize: symbolBuffer.length,
+                file: this._path,
+                stage: 'parseSymbolTable',
+              });
+            }
             const byteData = new Int32Array(symbolBuffer.subarray(pointer, pointer + 4));
             const value = Buffer.from(byteData).readIntLE(0, byteData.length);
 
@@ -268,6 +316,16 @@ export class QvdFileReader {
           }
           case 2: {
             // Double value (8 Bytes)
+            // Validate we have enough bytes for a double
+            if (pointer + 8 > symbolBuffer.length) {
+              throw new QvdCorruptedError('Buffer overflow reading double symbol', {
+                field: field['FieldName'],
+                pointer: pointer,
+                bufferSize: symbolBuffer.length,
+                file: this._path,
+                stage: 'parseSymbolTable',
+              });
+            }
             const byteData = new Int32Array(symbolBuffer.subarray(pointer, pointer + 8));
             const value = Buffer.from(byteData).readDoubleLE(0);
 
@@ -279,9 +337,29 @@ export class QvdFileReader {
           case 4: {
             // String value (0 terminated)
             const byteData = [];
+            const maxStringLength = 1048576; // 1MB max string size to prevent memory exhaustion
 
-            while (symbolBuffer[pointer] !== 0) {
+            while (pointer < symbolBuffer.length && symbolBuffer[pointer] !== 0) {
+              if (byteData.length >= maxStringLength) {
+                throw new QvdCorruptedError('String symbol exceeds maximum length', {
+                  field: field['FieldName'],
+                  maxLength: maxStringLength,
+                  file: this._path,
+                  stage: 'parseSymbolTable',
+                });
+              }
               byteData.push(symbolBuffer[pointer++]);
+            }
+
+            // Ensure we found the null terminator
+            if (pointer >= symbolBuffer.length) {
+              throw new QvdCorruptedError('String symbol not null-terminated', {
+                field: field['FieldName'],
+                pointer: pointer,
+                bufferSize: symbolBuffer.length,
+                file: this._path,
+                stage: 'parseSymbolTable',
+              });
             }
 
             const value = Buffer.from(byteData).toString('utf-8');
@@ -291,6 +369,16 @@ export class QvdFileReader {
           }
           case 5: {
             // Dual (Integer format) value (4 bytes), followed by string format
+            // Validate we have enough bytes for an integer
+            if (pointer + 4 > symbolBuffer.length) {
+              throw new QvdCorruptedError('Buffer overflow reading dual integer symbol', {
+                field: field['FieldName'],
+                pointer: pointer,
+                bufferSize: symbolBuffer.length,
+                file: this._path,
+                stage: 'parseSymbolTable',
+              });
+            }
             const intByteData = new Int32Array(symbolBuffer.subarray(pointer, pointer + 4));
             const intValue = Buffer.from(intByteData).readIntLE(0, intByteData.length);
 
@@ -298,9 +386,29 @@ export class QvdFileReader {
 
             /** @type {number[]} */
             const stringByteData = [];
+            const maxStringLength = 1048576; // 1MB max string size to prevent memory exhaustion
 
-            while (symbolBuffer[pointer] !== 0) {
+            while (pointer < symbolBuffer.length && symbolBuffer[pointer] !== 0) {
+              if (stringByteData.length >= maxStringLength) {
+                throw new QvdCorruptedError('Dual string symbol exceeds maximum length', {
+                  field: field['FieldName'],
+                  maxLength: maxStringLength,
+                  file: this._path,
+                  stage: 'parseSymbolTable',
+                });
+              }
               stringByteData.push(symbolBuffer[pointer++]);
+            }
+
+            // Ensure we found the null terminator
+            if (pointer >= symbolBuffer.length) {
+              throw new QvdCorruptedError('Dual string symbol not null-terminated', {
+                field: field['FieldName'],
+                pointer: pointer,
+                bufferSize: symbolBuffer.length,
+                file: this._path,
+                stage: 'parseSymbolTable',
+              });
             }
 
             const stringValue = Buffer.from(stringByteData).toString('utf-8');
@@ -311,6 +419,16 @@ export class QvdFileReader {
 
           case 6: {
             // Dual (Double format) value (8 bytes), followed by string format
+            // Validate we have enough bytes for a double
+            if (pointer + 8 > symbolBuffer.length) {
+              throw new QvdCorruptedError('Buffer overflow reading dual double symbol', {
+                field: field['FieldName'],
+                pointer: pointer,
+                bufferSize: symbolBuffer.length,
+                file: this._path,
+                stage: 'parseSymbolTable',
+              });
+            }
             const doubleByteData = new Int32Array(symbolBuffer.subarray(pointer, pointer + 8));
             const doubleValue = Buffer.from(doubleByteData).readDoubleLE(0);
 
@@ -318,9 +436,29 @@ export class QvdFileReader {
 
             /** @type {number[]} */
             const stringByteData = [];
+            const maxStringLength = 1048576; // 1MB max string size to prevent memory exhaustion
 
-            while (symbolBuffer[pointer] !== 0) {
+            while (pointer < symbolBuffer.length && symbolBuffer[pointer] !== 0) {
+              if (stringByteData.length >= maxStringLength) {
+                throw new QvdCorruptedError('Dual string symbol exceeds maximum length', {
+                  field: field['FieldName'],
+                  maxLength: maxStringLength,
+                  file: this._path,
+                  stage: 'parseSymbolTable',
+                });
+              }
               stringByteData.push(symbolBuffer[pointer++]);
+            }
+
+            // Ensure we found the null terminator
+            if (pointer >= symbolBuffer.length) {
+              throw new QvdCorruptedError('Dual string symbol not null-terminated', {
+                field: field['FieldName'],
+                pointer: pointer,
+                bufferSize: symbolBuffer.length,
+                file: this._path,
+                stage: 'parseSymbolTable',
+              });
             }
 
             const stringValue = Buffer.from(stringByteData).toString('utf-8');
@@ -384,13 +522,118 @@ export class QvdFileReader {
     // Size of a single row of the index table in bytes
     const recordSize = parseInt(this._header['QvdTableHeader']['RecordByteSize'], 10);
 
+    // Validate recordSize
+    if (isNaN(recordSize) || recordSize < 0) {
+      throw new QvdCorruptedError('Invalid record byte size', {
+        recordSize: recordSize,
+        file: this._path,
+        stage: 'parseIndexTable',
+      });
+    }
+
+    // Validate recordSize is reasonable (max 1MB per record)
+    if (recordSize > 1048576) {
+      throw new QvdCorruptedError('Record byte size exceeds maximum', {
+        recordSize: recordSize,
+        maxSize: 1048576,
+        file: this._path,
+        stage: 'parseIndexTable',
+      });
+    }
+
     const totalRows = parseInt(this._header['QvdTableHeader']['NoOfRecords'], 10);
+
+    // Validate totalRows
+    if (isNaN(totalRows) || totalRows < 0) {
+      throw new QvdCorruptedError('Invalid number of records', {
+        totalRows: totalRows,
+        file: this._path,
+        stage: 'parseIndexTable',
+      });
+    }
+
     const rowsToLoad = maxRows !== null ? Math.min(maxRows, totalRows) : totalRows;
+
+    const indexTableLength = parseInt(this._header['QvdTableHeader']['Length'], 10);
+
+    // Validate index table length
+    if (isNaN(indexTableLength) || indexTableLength < 0) {
+      throw new QvdCorruptedError('Invalid index table length', {
+        length: indexTableLength,
+        file: this._path,
+        stage: 'parseIndexTable',
+      });
+    }
+
+    // Validate index table start offset doesn't extend beyond buffer
+    // Note: subarray automatically clamps the end index, so we only need to validate
+    // that the start of the index table is within bounds and that we have at least
+    // some data to read. We allow the end to be at or slightly beyond buffer.length
+    // since subarray will clamp it appropriately.
+    if (this._indexTableOffset > this._buffer.length) {
+      throw new QvdCorruptedError('Index table offset beyond buffer', {
+        indexTableOffset: this._indexTableOffset,
+        bufferSize: this._buffer.length,
+        file: this._path,
+        stage: 'parseIndexTable',
+      });
+    }
+
+    // Validate that the claimed index table length isn't excessively large
+    // (more than 100MB beyond actual buffer size would indicate corruption)
+    const maxReasonableOverage = 100 * 1024 * 1024;
+    if (indexTableLength > this._buffer.length + maxReasonableOverage) {
+      throw new QvdCorruptedError('Index table length unreasonably large', {
+        indexTableLength: indexTableLength,
+        bufferSize: this._buffer.length,
+        file: this._path,
+        stage: 'parseIndexTable',
+      });
+    }
 
     const indexBuffer = this._buffer.subarray(
       this._indexTableOffset,
-      this._indexTableOffset + parseInt(this._header['QvdTableHeader']['Length'], 10) + 1,
+      this._indexTableOffset + indexTableLength + 1,
     );
+
+    // Validate BitOffset and BitWidth for all fields before processing
+    for (const field of fields) {
+      const bitOffset = parseInt(field['BitOffset'], 10);
+      const bitWidth = parseInt(field['BitWidth'], 10);
+
+      // Validate bitOffset
+      if (isNaN(bitOffset) || bitOffset < 0) {
+        throw new QvdCorruptedError('Invalid bit offset', {
+          field: field['FieldName'],
+          bitOffset: bitOffset,
+          file: this._path,
+          stage: 'parseIndexTable',
+        });
+      }
+
+      // Validate bitWidth
+      if (isNaN(bitWidth) || bitWidth < 0) {
+        throw new QvdCorruptedError('Invalid bit width', {
+          field: field['FieldName'],
+          bitWidth: bitWidth,
+          file: this._path,
+          stage: 'parseIndexTable',
+        });
+      }
+
+      // Validate bitOffset + bitWidth doesn't exceed record size in bits
+      const recordSizeInBits = recordSize * 8;
+      if (bitOffset + bitWidth > recordSizeInBits) {
+        throw new QvdCorruptedError('Bit field extends beyond record size', {
+          field: field['FieldName'],
+          bitOffset: bitOffset,
+          bitWidth: bitWidth,
+          recordSizeInBits: recordSizeInBits,
+          file: this._path,
+          stage: 'parseIndexTable',
+        });
+      }
+    }
 
     this._indexTable = [];
 
@@ -400,6 +643,17 @@ export class QvdFileReader {
       pointer < indexBuffer.length && rowCount < rowsToLoad;
       pointer += recordSize, rowCount++
     ) {
+      // Validate we have enough bytes for this record
+      if (pointer + recordSize > indexBuffer.length) {
+        throw new QvdCorruptedError('Buffer overflow reading index table record', {
+          pointer: pointer,
+          recordSize: recordSize,
+          bufferSize: indexBuffer.length,
+          file: this._path,
+          stage: 'parseIndexTable',
+        });
+      }
+
       const bytes = new Int32Array(indexBuffer.subarray(pointer, pointer + recordSize));
       bytes.reverse();
 
