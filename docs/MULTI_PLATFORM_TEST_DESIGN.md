@@ -50,27 +50,47 @@ graph TD
     C --> E[Windows Server 2022]
     C --> F[macOS 13]
     
-    D --> G[Self-Hosted Runner Linux]
-    E --> H[Self-Hosted Runner Windows]
-    F --> I[Self-Hosted Runner macOS]
+    D --> D1{Node.js Version}
+    E --> E1{Node.js Version}
+    F --> F1{Node.js Version}
     
-    G --> J[Setup Node.js]
-    H --> J
-    I --> J
+    D1 --> D2[Node 20.x]
+    D1 --> D3[Node 22.x]
+    D1 --> D4[Node 24.x]
     
-    J --> K[Install Dependencies]
-    K --> L[Run Linting]
-    L --> M[Run Build]
-    M --> N[Run Unit Tests]
-    N --> O[Run Integration Tests]
-    O --> P[Run E2E Tests]
-    P --> Q[Run Security Tests]
-    Q --> R[Generate Coverage Report]
-    R --> S[Upload Artifacts]
+    E1 --> E2[Node 20.x]
+    E1 --> E3[Node 22.x]
+    E1 --> E4[Node 24.x]
+    
+    F1 --> F2[Node 20.x]
+    F1 --> F3[Node 22.x]
+    F1 --> F4[Node 24.x]
+    
+    D2 --> G[Install Dependencies]
+    D3 --> G
+    D4 --> G
+    E2 --> G
+    E3 --> G
+    E4 --> G
+    F2 --> G
+    F3 --> G
+    F4 --> G
+    
+    G --> H[Run Linting]
+    H --> I[Run Build]
+    I --> J[Run Unit Tests]
+    J --> K[Run Integration Tests]
+    K --> L[Run E2E Tests]
+    L --> M[Run Security Tests]
+    M --> N[Generate Coverage Report]
+    N --> O[Upload Artifacts]
     
     style A fill:#e1f5ff
-    style S fill:#c8e6c9
-    style Q fill:#fff9c4
+    style O fill:#c8e6c9
+    style M fill:#fff9c4
+    style D1 fill:#ffe0b2
+    style E1 fill:#ffe0b2
+    style F1 fill:#ffe0b2
 ```
 
 ### Test Execution Flow
