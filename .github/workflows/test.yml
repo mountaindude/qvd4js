@@ -123,16 +123,6 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Clean workspace (Windows)
-        if: runner.os == 'Windows'
-        shell: powershell
-        run: |
-          # Remove node_modules and package-lock to ensure clean install
-          if (Test-Path node_modules) { Remove-Item -Recurse -Force node_modules }
-          if (Test-Path package-lock.json) { Remove-Item -Force package-lock.json }
-          # Clear npm cache
-          npm cache clean --force
-
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
