@@ -1,6 +1,9 @@
 import path from 'path';
 import fs from 'fs';
 import {QvdDataFrame} from '../src';
+import {getDirname} from './test-utils.js';
+
+const __dirname = getDirname(import.meta.url);
 
 describe('Resource leak prevention in QvdFileReader', () => {
   test('File descriptor should be closed even when read operation fails', async () => {

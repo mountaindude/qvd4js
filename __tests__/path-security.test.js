@@ -1,6 +1,9 @@
 import path from 'path';
 import fs from 'fs';
 import {QvdDataFrame, QvdSecurityError} from '../src';
+import {getDirname} from './test-utils.js';
+
+const __dirname = getDirname(import.meta.url);
 
 describe('Path Traversal Security', () => {
   let testDataPath;

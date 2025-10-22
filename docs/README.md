@@ -9,6 +9,7 @@ Welcome to the qvd4js documentation directory. This folder contains comprehensiv
 **Purpose**: Summary of all deliverables for the multi-platform test solution design.
 
 **Contents**:
+
 - Complete list of documentation files
 - Test coverage breakdown
 - Platform configurations
@@ -25,6 +26,7 @@ Welcome to the qvd4js documentation directory. This folder contains comprehensiv
 **Purpose**: Executive summary and quick reference guide for the multi-platform testing solution.
 
 **Contents**:
+
 - High-level architecture overview
 - Quick setup guides for self-hosted runners
 - Test coverage breakdown
@@ -41,6 +43,7 @@ Welcome to the qvd4js documentation directory. This folder contains comprehensiv
 **Purpose**: Comprehensive technical specification for the automated multi-platform testing infrastructure.
 
 **Contents**:
+
 - Detailed test architecture and execution flow with Mermaid diagrams
 - Complete test categories (unit, integration, E2E, security, performance)
 - Test data requirements and generation strategies
@@ -56,6 +59,7 @@ Welcome to the qvd4js documentation directory. This folder contains comprehensiv
 **Reading Time**: 30-45 minutes
 
 **Key Highlights**:
+
 - 🎯 95%+ test coverage across all platforms
 - 🔒 Comprehensive security testing including path traversal prevention
 - 📊 Performance benchmarking and tracking
@@ -111,6 +115,7 @@ If you're setting up runners or CI/CD:
 ## Future Documentation
 
 Planned documentation additions:
+
 - Architecture deep-dive for QVD file format handling
 - Performance optimization guide
 - Security best practices guide

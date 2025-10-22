@@ -8,6 +8,9 @@ import {
   QvdSecurityError,
   QvdDataFrame,
 } from '../src';
+import {getDirname} from './test-utils.js';
+
+const __dirname = getDirname(import.meta.url);
 
 describe('Custom Error Classes', () => {
   describe('QvdError', () => {

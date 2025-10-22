@@ -3,14 +3,21 @@
   "version": "1.0.5",
   "type": "module",
   "description": "Utility library for reading/writing Qlik View Data (QVD) files in JavaScript.",
-  "main": "dist/index.js",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
+  },
   "files": [
     "dist"
   ],
   "scripts": {
-    "build": "npx babel ./src --out-dir ./dist",
+    "build": "tsup",
     "lint": "eslint .",
-    "test": "jest . --coverage",
+    "test": "NODE_OPTIONS=--experimental-vm-modules jest . --coverage",
     "clean": "rimraf -rf dist",
     "bench": "node benchmarks/qvd-parsing.bench.js",
     "bench:ci": "node benchmarks/qvd-parsing.bench.js --ci"
@@ -35,15 +42,14 @@
     "qvd",
     "qlik",
     "qlik sense",
-    "qlikview"
+    "qlikview",
+    "esm",
+    "commonjs",
+    "dual-package",
+    "data-analysis"
   ],
   "license": "MIT",
   "devDependencies": {
-    "@babel/cli": "^7.28.3",
-    "@babel/core": "^7.28.4",
-    "@babel/node": "^7.28.0",
-    "@babel/preset-env": "^7.28.3",
-    "babel-loader": "^10.0.0",
     "eslint": "^9.38.0",
     "eslint-config-google": "^0.14.0",
     "eslint-config-prettier": "^10.1.8",
@@ -52,7 +58,9 @@
     "jest": "^30.2.0",
     "prettier": "^3.6.2",
     "rimraf": "^6.0.1",
-    "tinybench": "^5.0.1"
+    "tinybench": "^5.0.1",
+    "tsup": "^8.5.0",
+    "typescript": "^5.9.3"
   },
   "dependencies": {
     "xml2js": "^0.6.2"
