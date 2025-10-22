@@ -189,37 +189,18 @@ jobs:
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
         run: npm run bench:ci
 
-      - name: Store benchmark results to GitHub Pages
+      - name: Upload benchmark results as artifact
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-        uses: benchmark-action/github-action-benchmark@v1
+        uses: actions/upload-artifact@v4
         with:
-          # Name of the benchmark - must be unique for each platform/node combination
-          name: 'qvd4js Benchmark - ${{ matrix.platform }} - Node ${{ matrix.node }}'
-          # Tool type - customBiggerIsBetter for ops/sec (higher is better)
-          tool: 'customBiggerIsBetter'
-          # Path to the benchmark output file
-          output-file-path: benchmark-results.json
-          # GitHub API token for pushing to gh-pages
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          # Automatically push results to gh-pages branch
-          auto-push: true
-          # Alert when performance degrades by more than 150%
-          alert-threshold: '150%'
-          # Post a comment on the commit when alert is triggered
-          comment-on-alert: true
-          # Don't fail the workflow on performance regression
-          fail-on-alert: false
-          # Always show benchmark summary in job output
-          summary-always: true
-          # Target branch for GitHub Pages
-          gh-pages-branch: gh-pages
-          # Directory path where benchmark data will be stored (unique per platform/node)
-          benchmark-data-dir-path: 'benchmarks/${{ matrix.platform }}-node${{ matrix.node }}'
+          name: benchmark-${{ matrix.platform }}-node${{ matrix.node }}
+          path: benchmark-results.json
+          retention-days: 30
 
   create-benchmark-index:
     name: Create Benchmark Overview Page
     runs-on: ubuntu-22.04
-    needs: test
+    needs: build
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     permissions:
       contents: write
@@ -427,6 +408,64 @@ jobs:
           git config --local user.name "github-actions[bot]"
           git add index.html
           git diff --staged --quiet || git commit -m "Update benchmark overview page"
+          git push
+
+  publish-benchmarks:
+    name: Publish Benchmarks to GitHub Pages
+    runs-on: ubuntu-22.04
+    needs: [test, create-benchmark-index]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout gh-pages branch
+        uses: actions/checkout@v4
+        with:
+          ref: gh-pages
+          fetch-depth: 0
+
+      - name: Download all benchmark artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: benchmark-*
+          path: benchmark-artifacts
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+
+      - name: Process and store benchmarks
+        run: |
+          # Install the benchmark action tool
+          npm install -g github-action-benchmark
+
+          # Process each benchmark artifact
+          for artifact_dir in benchmark-artifacts/benchmark-*; do
+            if [ -d "$artifact_dir" ]; then
+              # Extract platform and node version from directory name
+              # e.g., benchmark-Linux-node20.x -> Linux-node20.x
+              config=$(basename "$artifact_dir" | sed 's/^benchmark-//')
+              
+              # Run benchmark action for each configuration
+              github-action-benchmark \
+                --name "qvd4js Benchmark - $config" \
+                --tool customBiggerIsBetter \
+                --output-file-path "$artifact_dir/benchmark-results.json" \
+                --benchmark-data-dir-path "benchmarks/$config" \
+                --gh-pages-branch gh-pages \
+                --skip-fetch-gh-pages \
+                --alert-threshold 150% \
+                --fail-on-alert false || echo "Warning: Benchmark processing failed for $config"
+            fi
+          done
+
+      - name: Commit and push all benchmarks
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add benchmarks/
+          git diff --staged --quiet || git commit -m "Update benchmark results for all platforms"
           git push
 
   security-scan:

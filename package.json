@@ -8,7 +8,7 @@
     "dist"
   ],
   "scripts": {
-    "build": "babel ./src --out-dir ./dist",
+    "build": "npx babel ./src --out-dir ./dist",
     "lint": "eslint .",
     "test": "jest . --coverage",
     "clean": "rimraf -rf dist",
