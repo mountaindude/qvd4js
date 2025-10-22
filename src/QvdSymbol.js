@@ -72,7 +72,7 @@ export class QvdSymbol {
    * @return {Buffer} The byte representation of the symbol.
    */
   toByteRepresentation() {
-    if (this._intValue && this._stringValue) {
+    if (this._intValue !== null && this._stringValue !== null) {
       const intBuffer = Buffer.alloc(4);
       intBuffer.writeInt32LE(this._intValue);
 
@@ -81,7 +81,7 @@ export class QvdSymbol {
 
       // @ts-ignore - Buffer.concat type compatibility
       return Buffer.concat([Buffer.from([5]), intBuffer, stringBuffer]);
-    } else if (this._doubleValue && this._stringValue) {
+    } else if (this._doubleValue !== null && this._stringValue !== null) {
       const floatBuffer = Buffer.alloc(8);
       floatBuffer.writeDoubleLE(this._doubleValue);
 
@@ -90,19 +90,19 @@ export class QvdSymbol {
 
       // @ts-ignore - Buffer.concat type compatibility
       return Buffer.concat([Buffer.from([6]), floatBuffer, stringBuffer]);
-    } else if (this._intValue) {
+    } else if (this._intValue !== null) {
       const buffer = Buffer.alloc(4);
       buffer.writeInt32LE(this._intValue);
 
       // @ts-ignore - Buffer.concat type compatibility
       return Buffer.concat([Buffer.from([1]), buffer]);
-    } else if (this._doubleValue) {
+    } else if (this._doubleValue !== null) {
       const buffer = Buffer.alloc(8);
       buffer.writeDoubleLE(this._doubleValue);
 
       // @ts-ignore - Buffer.concat type compatibility
       return Buffer.concat([Buffer.from([2]), buffer]);
-    } else if (this._stringValue) {
+    } else if (this._stringValue !== null) {
       // @ts-ignore - Buffer.concat type compatibility
       const buffer = Buffer.concat([Buffer.from(this._stringValue, 'utf-8'), Buffer.from([0])]);
 
