@@ -7,6 +7,17 @@ on:
     branches: [main, develop]
   schedule:
     - cron: '0 0 * * 0' # Weekly on Sunday
+  workflow_dispatch:
+    inputs:
+      node_version:
+        description: 'Node.js version to test (optional - runs all by default)'
+        required: false
+        type: choice
+        options:
+          - 'all'
+          - '20.x'
+          - '22.x'
+          - '24.x'
 
 jobs:
   lint:
@@ -56,17 +67,56 @@ jobs:
           retention-days: 7
 
   test:
-    name: Test - ${{ matrix.os }} - Node ${{ matrix.node }}
+    name: Test - ${{ matrix.platform }} - Node ${{ matrix.node }}
     needs: build
-    runs-on: ${{ matrix.os }}
+    runs-on: ${{ matrix.runner }}
     strategy:
       fail-fast: false
       matrix:
-        os:
-          - ubuntu-22.04
-          - windows-2022
-          - macos-13
-        node: ['20.x', '22.x']
+        include:
+          # Linux - GitHub-hosted runners
+          - platform: Linux
+            runner: ubuntu-22.04
+            node: '20.x'
+          - platform: Linux
+            runner: ubuntu-22.04
+            node: '22.x'
+          - platform: Linux
+            runner: ubuntu-22.04
+            node: '24.x'
+
+          # Windows - Self-hosted runners
+          - platform: Windows
+            runner: [self-hosted, windows, x64]
+            node: '20.x'
+          - platform: Windows
+            runner: [self-hosted, windows, x64]
+            node: '22.x'
+          - platform: Windows
+            runner: [self-hosted, windows, x64]
+            node: '24.x'
+
+          # macOS Intel - Self-hosted runners
+          - platform: macOS-Intel
+            runner: [self-hosted, macos, x64]
+            node: '20.x'
+          - platform: macOS-Intel
+            runner: [self-hosted, macos, x64]
+            node: '22.x'
+          - platform: macOS-Intel
+            runner: [self-hosted, macos, x64]
+            node: '24.x'
+
+          # macOS Apple Silicon - Self-hosted runners
+          - platform: macOS-ARM
+            runner: [self-hosted, macos, arm64]
+            node: '20.x'
+          - platform: macOS-ARM
+            runner: [self-hosted, macos, arm64]
+            node: '22.x'
+          - platform: macOS-ARM
+            runner: [self-hosted, macos, arm64]
+            node: '24.x'
 
     steps:
       - name: Checkout code
@@ -77,6 +127,22 @@ jobs:
         with:
           node-version: ${{ matrix.node }}
           cache: 'npm'
+
+      - name: Display system information
+        shell: bash
+        run: |
+          echo "### System Information" >> $GITHUB_STEP_SUMMARY
+          echo "- **Platform**: ${{ matrix.platform }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Runner**: ${{ runner.name }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Node.js**: $(node --version)" >> $GITHUB_STEP_SUMMARY
+          echo "- **npm**: $(npm --version)" >> $GITHUB_STEP_SUMMARY
+          if [[ "$RUNNER_OS" != "Windows" ]]; then
+            echo "- **OS**: $(uname -s)" >> $GITHUB_STEP_SUMMARY
+            echo "- **Architecture**: $(uname -m)" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "- **OS**: Windows" >> $GITHUB_STEP_SUMMARY
+            echo "- **Architecture**: x64" >> $GITHUB_STEP_SUMMARY
+          fi
 
       - name: Install dependencies
         run: npm ci
@@ -92,8 +158,8 @@ jobs:
         if: always()
         with:
           files: ./coverage/coverage-final.json
-          flags: ${{ matrix.os }}-node${{ matrix.node }}
-          name: codecov-${{ matrix.os }}-node${{ matrix.node }}
+          flags: ${{ matrix.platform }}-node${{ matrix.node }}
+          name: codecov-${{ matrix.platform }}-node${{ matrix.node }}
           fail_ci_if_error: false
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
@@ -102,7 +168,7 @@ jobs:
         uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: test-results-${{ matrix.os }}-node${{ matrix.node }}
+          name: test-results-${{ matrix.platform }}-node${{ matrix.node }}
           path: |
             coverage/
             test-results/
