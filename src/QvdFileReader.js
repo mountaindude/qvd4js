@@ -141,7 +141,7 @@ export class QvdFileReader {
     const headerBeginIndex = 0;
     const headerDelimiterIndex = this._buffer.indexOf(HEADER_DELIMITER, headerBeginIndex);
 
-    if (!headerDelimiterIndex) {
+    if (headerDelimiterIndex === -1) {
       throw new QvdCorruptedError(
         'The XML header section does not exist or is not properly delimited from the binary data.',
         {

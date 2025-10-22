@@ -340,6 +340,89 @@ describe('Buffer Bounds Checking', () => {
       expect(df.shape[0]).toBeGreaterThan(0);
     });
   });
+
+  describe('Header Delimiter Edge Cases', () => {
+    test('should correctly handle header delimiter at position 0', async () => {
+      // This test verifies the fix for the issue where indexOf returning 0
+      // was incorrectly treated as falsy and causing an error
+      const HEADER_DELIMITER = '\r\n\0';
+
+      // Create a minimal valid header that starts immediately at position 0
+      const builder = new xml.Builder();
+      const minimalHeader = {
+        QvdTableHeader: {
+          QvBuildNo: '50879',
+          CreatorDoc: 'test.qvw',
+          CreateUtcTime: '2024-01-01 00:00:00',
+          TableName: 'TestTable',
+          Fields: {
+            QvdFieldHeader: {
+              FieldName: 'TestField',
+              BitOffset: '0',
+              BitWidth: '1',
+              Bias: '0',
+              NumberFormat: {Type: 'UNKNOWN'},
+              NoOfSymbols: '1',
+              Offset: '0',
+              Length: '5',
+              Comment: '',
+            },
+          },
+          NoOfRecords: '1',
+          Offset: '5',
+          Length: '1',
+          RecordByteSize: '1',
+          Comment: '',
+        },
+      };
+
+      const headerXml = builder.buildObject(minimalHeader);
+      const headerBuffer = Buffer.from(headerXml + HEADER_DELIMITER);
+
+      // Create minimal symbol table (1 symbol: type byte 1 (int) + 4 bytes for value 0)
+      const symbolBuffer = Buffer.alloc(5);
+      symbolBuffer[0] = 1; // Type byte for integer
+      symbolBuffer.writeInt32LE(0, 1); // Value 0
+
+      // Create minimal index table (1 record, 1 byte)
+      const indexBuffer = Buffer.alloc(1);
+      indexBuffer[0] = 0;
+
+      // Combine all parts
+      const qvdBuffer = Buffer.concat([headerBuffer, symbolBuffer, indexBuffer]);
+
+      // Write to temp file
+      const tempPath = path.join(__dirname, 'data', `test-delimiter-at-zero-${Date.now()}.qvd`);
+      await fs.promises.writeFile(tempPath, qvdBuffer);
+      createdFiles.push(tempPath);
+
+      // This should not throw an error even though delimiter index is 0
+      // (which was the bug - it was checking !headerDelimiterIndex instead of headerDelimiterIndex === -1)
+      await expect(QvdDataFrame.fromQvd(tempPath)).resolves.toBeDefined();
+
+      // Verify the file loads successfully
+      const df = await QvdDataFrame.fromQvd(tempPath);
+      expect(df).toBeDefined();
+      expect(df.columns).toEqual(['TestField']);
+      expect(df.shape[0]).toBe(1);
+    });
+
+    test('should throw error when header delimiter is truly missing', async () => {
+      // Create a buffer without the header delimiter to ensure proper error handling
+      const invalidBuffer = Buffer.from('<?xml version="1.0"?><QvdTableHeader><TableName>Test</TableName></QvdTableHeader>');
+
+      const tempPath = path.join(__dirname, 'data', `test-missing-delimiter-${Date.now()}.qvd`);
+      await fs.promises.writeFile(tempPath, invalidBuffer);
+      createdFiles.push(tempPath);
+
+      // This should throw an error because the delimiter is actually missing
+      await expect(QvdDataFrame.fromQvd(tempPath)).rejects.toThrow(QvdCorruptedError);
+      await expect(QvdDataFrame.fromQvd(tempPath)).rejects.toMatchObject({
+        message: 'The XML header section does not exist or is not properly delimited from the binary data.',
+        code: 'QVD_CORRUPTED_ERROR',
+      });
+    });
+  });
 });
 
 /**
