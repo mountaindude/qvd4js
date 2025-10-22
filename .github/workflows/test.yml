@@ -68,6 +68,9 @@ jobs:
     name: Test - ${{ matrix.platform }} - Node ${{ matrix.node }}
     needs: build
     runs-on: ${{ matrix.runner }}
+    permissions:
+      contents: write
+      deployments: write
     strategy:
       fail-fast: false
       matrix:
@@ -181,6 +184,27 @@ jobs:
             coverage/
             test-results/
           retention-days: 30
+
+      - name: Run benchmarks
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        run: npm run bench:ci
+
+      - name: Store benchmark results to GitHub Pages
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        uses: benchmark-action/github-action-benchmark@v1
+        with:
+          tool: 'customBiggerIsBetter'
+          output-file-path: benchmark-results.json
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          auto-push: true
+          alert-threshold: '150%'
+          comment-on-alert: true
+          fail-on-alert: false
+          summary-always: true
+          gh-pages-branch: gh-pages
+          benchmark-data-dir-path: 'benchmarks/${{ matrix.platform }}-node${{ matrix.node }}'
+          # Add extra benchmark info
+          external-data-json-path: ./cache/benchmark-data.json
 
   security-scan:
     name: Security Scan

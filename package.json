@@ -13,7 +13,8 @@
     "test": "jest . --coverage",
     "clean": "rimraf -rf dist",
     "bench": "node benchmarks/qvd-parsing.bench.js",
-    "bench:ci": "node benchmarks/qvd-parsing.bench.js > benchmark-results.json"
+    "bench:ci": "node benchmarks/qvd-parsing.bench.js > benchmark-results.json",
+    "bench:push": "./scripts/push-benchmark.sh"
   },
   "author": {
     "name": "Constantin Müller",
