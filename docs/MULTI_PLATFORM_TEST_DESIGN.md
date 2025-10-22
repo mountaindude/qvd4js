@@ -28,6 +28,7 @@ This document describes the comprehensive automated testing solution for the qvd
 ### Current State
 
 The repository currently has:
+
 - **7 test suites** with 95 tests covering:
   - Reader operations (small, medium, large files)
   - Writer operations
@@ -49,23 +50,23 @@ graph TD
     C --> D[Ubuntu 22.04]
     C --> E[Windows Server 2022]
     C --> F[macOS 13]
-    
+
     D --> D1{Node.js Version}
     E --> E1{Node.js Version}
     F --> F1{Node.js Version}
-    
+
     D1 --> D2[Node 20.x]
     D1 --> D3[Node 22.x]
     D1 --> D4[Node 24.x]
-    
+
     E1 --> E2[Node 20.x]
     E1 --> E3[Node 22.x]
     E1 --> E4[Node 24.x]
-    
+
     F1 --> F2[Node 20.x]
     F1 --> F3[Node 22.x]
     F1 --> F4[Node 24.x]
-    
+
     D2 --> G[Install Dependencies]
     D3 --> G
     D4 --> G
@@ -75,7 +76,7 @@ graph TD
     F2 --> G
     F3 --> G
     F4 --> G
-    
+
     G --> H[Run Linting]
     H --> I[Run Build]
     I --> J[Run Unit Tests]
@@ -84,7 +85,7 @@ graph TD
     L --> M[Run Security Tests]
     M --> N[Generate Coverage Report]
     N --> O[Upload Artifacts]
-    
+
     style A fill:#e1f5ff
     style O fill:#c8e6c9
     style M fill:#fff9c4
@@ -102,7 +103,7 @@ sequenceDiagram
     participant NPM as NPM Registry
     participant FS as File System
     participant Tests as Test Suite
-    
+
     GH->>Runner: Trigger workflow
     Runner->>NPM: Install dependencies
     NPM-->>Runner: Dependencies installed
@@ -131,6 +132,7 @@ sequenceDiagram
 **Location**: `__tests__/*.test.js`
 
 **Coverage**:
+
 - QvdDataFrame operations (head, tail, rows, at, select)
 - QvdSymbol type handling (integer, float, string, dual types)
 - QvdFileReader parsing logic
@@ -140,6 +142,7 @@ sequenceDiagram
 - Metadata operations
 
 **Expansion Needed**:
+
 - [ ] Edge case handling for extreme values
 - [ ] Memory stress tests with large files
 - [ ] Concurrent read/write operations
@@ -152,6 +155,7 @@ sequenceDiagram
 **Test Scenarios**:
 
 #### Read Operations
+
 ```javascript
 describe('QVD Read Integration', () => {
   test('Read small file and verify all data', () => {
@@ -176,6 +180,7 @@ describe('QVD Read Integration', () => {
 ```
 
 #### Write Operations
+
 ```javascript
 describe('QVD Write Integration', () => {
   test('Write and read back verification', () => {
@@ -201,6 +206,7 @@ describe('QVD Write Integration', () => {
 ```
 
 #### Modify Operations
+
 ```javascript
 describe('QVD Modify Integration', () => {
   test('Select columns and write', () => {
@@ -233,6 +239,7 @@ describe('QVD Modify Integration', () => {
 **Test Scenarios**:
 
 #### Complete Workflow Tests
+
 ```javascript
 describe('E2E: Data Pipeline', () => {
   test('Load → Transform → Save → Reload → Verify', () => {
@@ -254,6 +261,7 @@ describe('E2E: Data Pipeline', () => {
 ```
 
 #### Cross-Platform Compatibility
+
 ```javascript
 describe('E2E: Platform Compatibility', () => {
   test('File written on Windows readable on Linux', () => {
@@ -275,6 +283,7 @@ describe('E2E: Platform Compatibility', () => {
 **Test Scenarios**:
 
 #### Path Traversal Prevention
+
 ```javascript
 describe('Security: Path Traversal', () => {
   test('Reject absolute path traversal in fromQvd', async () => {
@@ -299,6 +308,7 @@ describe('Security: Path Traversal', () => {
 ```
 
 #### Malicious Input Handling
+
 ```javascript
 describe('Security: Malicious Input', () => {
   test('Handle corrupted QVD file gracefully', async () => {
@@ -324,6 +334,7 @@ describe('Security: Malicious Input', () => {
 ```
 
 #### Resource Exhaustion Prevention
+
 ```javascript
 describe('Security: Resource Limits', () => {
   test('Limit memory usage for large files', async () => {
@@ -346,6 +357,7 @@ describe('Security: Resource Limits', () => {
 **Test Scenarios**:
 
 #### Performance Benchmarks
+
 ```javascript
 describe('Performance: Reading', () => {
   test('Small file (<100KB) loads in <250ms', () => {
@@ -386,27 +398,27 @@ describe('Performance: Writing', () => {
 
 ### Current Test Data
 
-| File          | Size  | Rows   | Columns | Purpose                     |
-| ------------- | ----- | ------ | ------- | --------------------------- |
-| small.qvd     | 29KB  | 606    | 8       | Fast unit tests             |
-| medium.qvd    | 901KB | 18,484 | 13      | Medium-scale integration    |
-| large.qvd     | 1MB   | 60,398 | 11      | Large-scale performance     |
-| damaged.qvd   | 20KB  | N/A    | N/A     | Error handling              |
+| File        | Size  | Rows   | Columns | Purpose                  |
+| ----------- | ----- | ------ | ------- | ------------------------ |
+| small.qvd   | 29KB  | 606    | 8       | Fast unit tests          |
+| medium.qvd  | 901KB | 18,484 | 13      | Medium-scale integration |
+| large.qvd   | 1MB   | 60,398 | 11      | Large-scale performance  |
+| damaged.qvd | 20KB  | N/A    | N/A     | Error handling           |
 
 ### Additional Test Data Needed
 
-| File                   | Size     | Purpose                                    |
-| ---------------------- | -------- | ------------------------------------------ |
-| empty.qvd              | ~1KB     | Edge case: Zero rows                       |
-| single_row.qvd         | ~2KB     | Edge case: Minimum data                    |
-| all_types.qvd          | ~50KB    | All symbol types (int, float, str, dual)   |
-| unicode.qvd            | ~100KB   | Unicode and special characters             |
-| extra_large.qvd        | 50MB+    | Performance testing (optional)             |
-| malformed_header.qvd   | ~10KB    | Security: Invalid XML header               |
-| malformed_symbols.qvd  | ~10KB    | Security: Invalid symbol table             |
-| malformed_index.qvd    | ~10KB    | Security: Invalid index table              |
-| max_columns.qvd        | ~500KB   | Edge case: Many columns (100+)             |
-| long_strings.qvd       | ~1MB     | Edge case: Very long string values         |
+| File                  | Size   | Purpose                                  |
+| --------------------- | ------ | ---------------------------------------- |
+| empty.qvd             | ~1KB   | Edge case: Zero rows                     |
+| single_row.qvd        | ~2KB   | Edge case: Minimum data                  |
+| all_types.qvd         | ~50KB  | All symbol types (int, float, str, dual) |
+| unicode.qvd           | ~100KB | Unicode and special characters           |
+| extra_large.qvd       | 50MB+  | Performance testing (optional)           |
+| malformed_header.qvd  | ~10KB  | Security: Invalid XML header             |
+| malformed_symbols.qvd | ~10KB  | Security: Invalid symbol table           |
+| malformed_index.qvd   | ~10KB  | Security: Invalid index table            |
+| max_columns.qvd       | ~500KB | Edge case: Many columns (100+)           |
+| long_strings.qvd      | ~1MB   | Edge case: Very long string values       |
 
 ### Test Data Generation Strategy
 
@@ -419,11 +431,11 @@ describe('Performance: Writing', () => {
 
 ### Target Platforms
 
-| OS              | Architecture | Node.js Versions | Runner Type   |
-| --------------- | ------------ | ---------------- | ------------- |
-| Ubuntu 22.04    | x64          | 20.x, 22.x       | Self-hosted   |
-| Windows Server  | x64          | 20.x, 22.x       | Self-hosted   |
-| macOS 13        | x64, arm64   | 20.x, 22.x       | Self-hosted   |
+| OS             | Architecture | Node.js Versions | Runner Type |
+| -------------- | ------------ | ---------------- | ----------- |
+| Ubuntu 22.04   | x64          | 20.x, 22.x       | Self-hosted |
+| Windows Server | x64          | 20.x, 22.x       | Self-hosted |
+| macOS 13       | x64, arm64   | 20.x, 22.x       | Self-hosted |
 
 ### Node.js Version Strategy
 
@@ -435,17 +447,20 @@ describe('Performance: Writing', () => {
 ### Platform-Specific Considerations
 
 #### Windows
+
 - Path separators: `\` vs `/`
 - Line endings: CRLF vs LF
 - File permissions: Different from Unix
 - Case sensitivity: Case-insensitive file system
 
 #### macOS
+
 - Both Intel (x64) and Apple Silicon (arm64) support
 - Case-insensitive file system by default
 - Unix-like path handling
 
 #### Linux
+
 - Case-sensitive file system
 - Standard Unix path handling
 - Primary development platform
@@ -460,11 +475,11 @@ name: Multi-Platform Test Suite
 
 on:
   push:
-    branches: [ main, develop ]
+    branches: [main, develop]
   pull_request:
-    branches: [ main, develop ]
+    branches: [main, develop]
   schedule:
-    - cron: '0 0 * * 0'  # Weekly on Sunday
+    - cron: '0 0 * * 0' # Weekly on Sunday
 
 jobs:
   lint:
@@ -501,38 +516,38 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: 
+        os:
           - ubuntu-22.04
           - windows-2022
           - macos-13
         node: ['20.x', '22.x']
-    
+
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node }}
-      
+
       - name: Install dependencies
         run: npm ci
-      
+
       - name: Run unit tests
         run: npm run test:unit
-      
+
       - name: Run integration tests
         run: npm run test:integration
-      
+
       - name: Run E2E tests
         run: npm run test:e2e
-      
+
       - name: Run security tests
         run: npm run test:security
-      
+
       - name: Generate coverage report
         run: npm run coverage
-      
+
       - name: Upload coverage
         uses: codecov/codecov-action@v4
         with:
@@ -581,9 +596,9 @@ name: Self-Hosted Multi-Platform Tests
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   pull_request:
-    branches: [ main ]
+    branches: [main]
 
 jobs:
   test-self-hosted:
@@ -597,24 +612,24 @@ jobs:
           - self-hosted-windows
           - self-hosted-macos
         node: ['20.x', '22.x']
-    
+
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node }}
-      
+
       - name: Install dependencies
         run: npm ci
-      
+
       - name: Build
         run: npm run build
-      
+
       - name: Run all tests
         run: npm test
-      
+
       - name: Upload results
         if: always()
         uses: actions/upload-artifact@v4
@@ -629,22 +644,24 @@ jobs:
 
 ### Hardware Requirements
 
-| Component | Minimum       | Recommended   |
-| --------- | ------------- | ------------- |
-| CPU       | 2 cores       | 4+ cores      |
-| RAM       | 4 GB          | 8+ GB         |
-| Disk      | 50 GB free    | 100+ GB free  |
-| Network   | 10 Mbps       | 100+ Mbps     |
+| Component | Minimum    | Recommended  |
+| --------- | ---------- | ------------ |
+| CPU       | 2 cores    | 4+ cores     |
+| RAM       | 4 GB       | 8+ GB        |
+| Disk      | 50 GB free | 100+ GB free |
+| Network   | 10 Mbps    | 100+ Mbps    |
 
 ### Software Requirements
 
 #### All Platforms
+
 - Git 2.x+
 - Node.js 20.10.0+ (via nvm/nvs recommended)
 - npm 10+
 - GitHub Actions Runner (latest)
 
 #### Linux (Ubuntu 22.04)
+
 ```bash
 # Install required packages
 sudo apt-get update
@@ -666,6 +683,7 @@ sudo ./svc.sh start
 ```
 
 #### Windows (Server 2022)
+
 ```powershell
 # Install Chocolatey
 Set-ExecutionPolicy Bypass -Scope Process -Force
@@ -690,6 +708,7 @@ Expand-Archive -Path actions-runner-win-x64-2.311.0.zip -DestinationPath .
 ```
 
 #### macOS (13+)
+
 ```bash
 # Install Homebrew
 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
@@ -715,6 +734,7 @@ tar xzf ./actions-runner-osx-x64-2.311.0.tar.gz
 ### Runner Labels
 
 Configure runners with descriptive labels:
+
 - `self-hosted` (automatic)
 - `self-hosted-linux`, `self-hosted-windows`, `self-hosted-macos`
 - OS-specific: `ubuntu-22.04`, `windows-2022`, `macos-13`
@@ -736,6 +756,7 @@ Configure runners with descriptive labels:
 **Vulnerability**: Attacker provides malicious path to read/write files outside intended directory
 
 **Test Coverage**:
+
 ```javascript
 // Absolute path attempts
 await expect(QvdDataFrame.fromQvd('/etc/passwd')).rejects.toThrow(QvdSecurityError);
@@ -751,6 +772,7 @@ await expect(QvdDataFrame.fromQvd('%2e%2e%2f%2e%2e%2fetc%2fpasswd')).rejects.toT
 ```
 
 **Implementation Strategy**:
+
 1. Validate all file paths before operations
 2. Resolve paths to absolute paths
 3. Verify paths stay within allowed directories
@@ -762,6 +784,7 @@ await expect(QvdDataFrame.fromQvd('%2e%2e%2f%2e%2e%2fetc%2fpasswd')).rejects.toT
 **Vulnerability**: Malformed QVD files cause buffer overflows
 
 **Test Coverage**:
+
 ```javascript
 // Oversized field names
 test('Reject field names > 1MB', async () => {
@@ -781,6 +804,7 @@ test('Detect symbol table size mismatch', async () => {
 **Vulnerability**: Malicious XML in QVD header
 
 **Test Coverage**:
+
 ```javascript
 test('Reject XML entity expansion attacks', async () => {
   // Billion laughs attack
@@ -799,26 +823,26 @@ test('Reject XML entity expansion attacks', async () => {
 ### Denial of Service Prevention
 
 **Test Coverage**:
+
 ```javascript
 test('Limit memory usage for large files', async () => {
   const memBefore = process.memoryUsage().heapUsed;
-  await QvdDataFrame.fromQvd('large.qvd', { maxRows: 100 });
+  await QvdDataFrame.fromQvd('large.qvd', {maxRows: 100});
   const memAfter = process.memoryUsage().heapUsed;
   const memDelta = memAfter - memBefore;
-  
+
   expect(memDelta).toBeLessThan(100 * 1024 * 1024); // 100MB limit
 });
 
 test('Timeout for operations on corrupted files', async () => {
-  await expect(
-    withTimeout(QvdDataFrame.fromQvd('damaged.qvd'), 5000)
-  ).rejects.toThrow('Timeout');
+  await expect(withTimeout(QvdDataFrame.fromQvd('damaged.qvd'), 5000)).rejects.toThrow('Timeout');
 });
 ```
 
 ## Implementation Phases
 
 ### Phase 1: Foundation (Week 1)
+
 - [x] Explore existing test infrastructure
 - [x] Document current state
 - [ ] Create comprehensive design document
@@ -826,6 +850,7 @@ test('Timeout for operations on corrupted files', async () => {
 - [ ] Add test data generation scripts
 
 ### Phase 2: Test Expansion (Week 2)
+
 - [ ] Implement integration tests
 - [ ] Implement E2E tests
 - [ ] Expand unit test coverage to 95%+
@@ -833,6 +858,7 @@ test('Timeout for operations on corrupted files', async () => {
 - [ ] Create additional test data files
 
 ### Phase 3: Security Hardening (Week 3)
+
 - [ ] Implement security test suite
 - [ ] Add path traversal prevention
 - [ ] Add input validation for all file operations
@@ -840,6 +866,7 @@ test('Timeout for operations on corrupted files', async () => {
 - [ ] Security audit of xml2js usage
 
 ### Phase 4: CI/CD Setup (Week 4)
+
 - [ ] Create GitHub Actions workflows
 - [ ] Configure matrix testing
 - [ ] Set up code coverage reporting (Codecov)
@@ -847,6 +874,7 @@ test('Timeout for operations on corrupted files', async () => {
 - [ ] Add performance tracking
 
 ### Phase 5: Self-Hosted Runners (Week 5)
+
 - [ ] Document runner requirements
 - [ ] Provide runner setup scripts
 - [ ] Configure Linux runner
@@ -855,6 +883,7 @@ test('Timeout for operations on corrupted files', async () => {
 - [ ] Test end-to-end on all platforms
 
 ### Phase 6: Monitoring & Documentation (Week 6)
+
 - [ ] Set up test result dashboards
 - [ ] Create troubleshooting guides
 - [ ] Document maintenance procedures
@@ -864,6 +893,7 @@ test('Timeout for operations on corrupted files', async () => {
 ## Success Metrics
 
 ### Test Coverage
+
 - **Unit Tests**: 95%+ code coverage
 - **Integration Tests**: All major workflows covered
 - **E2E Tests**: Complete data pipeline tested
@@ -871,12 +901,14 @@ test('Timeout for operations on corrupted files', async () => {
 - **Performance Tests**: Baseline established for all platforms
 
 ### CI/CD Metrics
+
 - **Build Success Rate**: >95%
 - **Test Execution Time**: <10 minutes for full suite
 - **Platform Coverage**: 3 OS × 2 Node versions = 6 configurations
 - **Deployment Frequency**: Automated on merge to main
 
 ### Quality Metrics
+
 - **Bug Detection**: Catch issues before production
 - **Performance Regression**: Alert on >10% performance degradation
 - **Security Issues**: Zero high-severity vulnerabilities
@@ -885,12 +917,14 @@ test('Timeout for operations on corrupted files', async () => {
 ## Maintenance and Evolution
 
 ### Regular Tasks
+
 - **Weekly**: Review test failures, update dependencies
 - **Monthly**: Review coverage reports, add missing tests
 - **Quarterly**: Update test data, review performance trends
 - **Yearly**: Major test suite refactoring if needed
 
 ### Continuous Improvement
+
 - Monitor test execution times
 - Identify and fix flaky tests
 - Add tests for reported bugs
@@ -935,11 +969,7 @@ async function generateTestData() {
   // Generate large file
   const largeData = {
     columns: ['id', 'name', 'value'],
-    data: Array.from({length: 100000}, (_, i) => [
-      i,
-      `Name ${i}`,
-      Math.random() * 1000
-    ])
+    data: Array.from({length: 100000}, (_, i) => [i, `Name ${i}`, Math.random() * 1000]),
   };
   const largeDf = await QvdDataFrame.fromDict(largeData);
   await largeDf.toQvd('__tests__/data/extra_large.qvd');
