@@ -5,9 +5,10 @@ export default {
     '!**/node_modules/**',
     '!**/dist/**',
     '!**/coverage/**',
+    '!**/benchmarks/**',
     '!jest.config.js',
   ],
-  testPathIgnorePatterns: ['<rootDir>/node_modules/'],
+  testPathIgnorePatterns: ['<rootDir>/node_modules/', '<rootDir>/benchmarks/'],
   transform: {
     // Use babel-jest to transpile tests with the next/babel preset
     // https://jestjs.io/docs/configuration#transform-objectstring-pathtotransformer--pathtotransformer-object
