@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1761139233788,
+  "lastUpdate": 1761141481185,
   "repoUrl": "https://github.com/ptarmiganlabs/qvd4js",
   "entries": {
     "qvd4js Benchmark - Linux - Node 20.x": [
@@ -234,6 +234,65 @@ window.BENCHMARK_DATA = {
             "name": "Parse with maxRows=1000 (lazy loading)",
             "value": 28.792440414941268,
             "range": "±5.98%",
+            "unit": "ops/sec",
+            "extra": "64 samples"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "goran@ptarmiganlabs.com",
+            "name": "Göran Sander",
+            "username": "mountaindude"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "fe6b951c78365428b997da0d90498f83bb36ddd5",
+          "message": "Merge pull request #49 from ptarmiganlabs/copilot/replace-flaky-timing-tests",
+          "timestamp": "2025-10-22T15:44:40+02:00",
+          "tree_id": "de68c01ee5d7262adc6ffad11c9552d7e50a7344",
+          "url": "https://github.com/ptarmiganlabs/qvd4js/commit/fe6b951c78365428b997da0d90498f83bb36ddd5"
+        },
+        "date": 1761141480186,
+        "tool": "customBiggerIsBetter",
+        "benches": [
+          {
+            "name": "Parse small QVD (~600 rows)",
+            "value": 165.03890795866533,
+            "range": "±2.32%",
+            "unit": "ops/sec",
+            "extra": "163 samples"
+          },
+          {
+            "name": "Parse medium QVD (~18k rows)",
+            "value": 4.0340700006465315,
+            "range": "±1.01%",
+            "unit": "ops/sec",
+            "extra": "64 samples"
+          },
+          {
+            "name": "Parse large QVD (~60k rows)",
+            "value": 1.4715390054932067,
+            "range": "±0.13%",
+            "unit": "ops/sec",
+            "extra": "64 samples"
+          },
+          {
+            "name": "Parse with maxRows=100 (lazy loading)",
+            "value": 37.689286028467166,
+            "range": "±6.66%",
+            "unit": "ops/sec",
+            "extra": "64 samples"
+          },
+          {
+            "name": "Parse with maxRows=1000 (lazy loading)",
+            "value": 28.800088797236967,
+            "range": "±5.76%",
             "unit": "ops/sec",
             "extra": "64 samples"
           }
