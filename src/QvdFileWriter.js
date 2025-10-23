@@ -24,11 +24,13 @@ export class QvdFileWriter {
    * @param {Object} [options={}] Options for the writer.
    * @param {string} [options.allowedDir] Optional allowed directory path. If provided, the file
    *   path must be within this directory. Defaults to current working directory.
+   * @param {Function} [options.onProgress] Optional progress callback function.
    */
   constructor(filePath, df, options = {}) {
-    const {allowedDir} = options;
+    const {allowedDir, onProgress} = options;
     this._path = validatePath(filePath, allowedDir);
     this._df = df;
+    this._onProgress = onProgress;
     this._header = null;
     this._symbolBuffer = null;
     /** @type {Array<Array<import('./QvdSymbol.js').QvdSymbol>>|null} */
@@ -44,12 +46,33 @@ export class QvdFileWriter {
   }
 
   /**
+   * Emits a progress event if a callback is registered.
+   *
+   * @param {string} stage The current stage of the operation.
+   * @param {number} current The current progress value.
+   * @param {number} total The total progress value.
+   */
+  _emitProgress(stage, current, total) {
+    if (this._onProgress) {
+      const percent = total > 0 ? Math.round((current / total) * 100) : 100;
+      this._onProgress({
+        stage,
+        current,
+        total,
+        percent,
+      });
+    }
+  }
+
+  /**
    * Writes the data to the QVD file.
    */
   async _writeData() {
     assert(this._header, 'The QVD file header has not been parsed.');
     assert(this._symbolBuffer, 'The QVD file symbol table has not been parsed.');
     assert(this._indexBuffer, 'The QVD file index table has not been parsed.');
+
+    this._emitProgress('write', 0, 1);
 
     // @ts-ignore - Buffer.concat type compatibility
     const headerBuffer = Buffer.concat([Buffer.from(this._header, 'utf-8'), Buffer.from([0])]);
@@ -60,6 +83,7 @@ export class QvdFileWriter {
       await fd.write(headerBuffer, 0, headerBuffer.length, 0);
       await fd.write(this._symbolBuffer, 0, this._symbolBuffer.length, headerBuffer.length);
       await fd.write(this._indexBuffer, 0, this._indexBuffer.length, headerBuffer.length + this._symbolBuffer.length);
+      this._emitProgress('write', 1, 1);
     } finally {
       if (fd) {
         await fd.close();
@@ -71,6 +95,7 @@ export class QvdFileWriter {
    * Builds the XML header of the QVD file.
    */
   _buildHeader() {
+    this._emitProgress('header', 0, 1);
     const creationDate = new Date().toISOString().replace(/T/, ' ').replace(/\..+/, '');
     /** @type {import('./QvdDataFrame.js').QvdMetadata|null} */
     const existingMetadata = this._df.metadata;
@@ -177,18 +202,37 @@ export class QvdFileWriter {
       },
     });
     this._header = builder.buildObject(xmlObject) + '\r\n';
+    this._emitProgress('header', 1, 1);
   }
 
   /**
    * Builds the symbol table of the QVD file.
+   * Optimized to build all columns in a single pass through the data.
    */
   _buildSymbolTable() {
     this._symbolTable = [];
     this._symbolTableMetadata = [];
     this._symbolBuffer = Buffer.alloc(0);
 
-    this._df.columns.forEach((column) => {
-      const uniqueValues = Array.from(new Set(this._df.data.map((row) => row[this._df.columns.indexOf(column)])));
+    const numColumns = this._df.columns.length;
+
+    this._emitProgress('symbol-table', 0, numColumns);
+
+    // Initialize a Set for each column to track unique values
+    const uniqueValuesSets = this._df.columns.map(() => new Set());
+
+    // Single pass through all data to collect unique values for all columns
+    this._df.data.forEach((row) => {
+      this._df.columns.forEach((column, columnIndex) => {
+        const value = row[columnIndex];
+        uniqueValuesSets[columnIndex].add(value);
+      });
+    });
+
+    // Process each column's unique values
+    this._df.columns.forEach((column, columnIndex) => {
+      const uniqueValuesSet = uniqueValuesSets[columnIndex];
+      const uniqueValues = Array.from(uniqueValuesSet);
       const containsNull = uniqueValues.includes(null) || uniqueValues.includes(undefined);
       const symbols = uniqueValues
         .filter((value) => value !== null && value !== undefined)
@@ -206,31 +250,52 @@ export class QvdFileWriter {
       this._symbolTableMetadata?.push([symbolsOffset, symbolsLength, containsNull]);
       // @ts-ignore - Symbol array type compatibility
       this._symbolTable?.push(symbols);
+
+      this._emitProgress('symbol-table', columnIndex + 1, numColumns);
     });
   }
 
   /**
    * Builds the index table of the QVD file.
+   * Optimized with Map-based lookups for O(1) symbol index retrieval.
    */
   _buildIndexTable() {
     this._indexTable = [];
     this._indexTableMetadata = [];
     this._indexBuffer = Buffer.alloc(0);
 
+    const numRows = this._df.data.length;
+    this._emitProgress('index-table', 0, numRows);
+
+    // Build symbol-to-index lookup maps for O(1) lookups
+    // This converts the O(n×m×s) findIndex operations to O(n×m)
+    const symbolIndexMaps = this._symbolTable?.map((symbols) => {
+      const map = new Map();
+      symbols.forEach((symbol, idx) => {
+        // Create a unique key for each symbol based on its values
+        const key = `${symbol.intValue}|${symbol.doubleValue}|${symbol.stringValue}`;
+        map.set(key, idx);
+      });
+      return map;
+    });
+
+    let processedRows = 0;
+    const progressInterval = Math.max(1, Math.floor(numRows / 100)); // Report progress every 1%
+
     this._df.data.forEach((/** @type {any} */ row) => {
       // Convert the raw values to indices referring to the symbol table
-      const indices = this._df.columns.map((/** @type {any} */ column) => {
-        const value = row[this._df.columns.indexOf(column)];
+      const indices = this._df.columns.map((/** @type {any} */ column, columnIndex) => {
+        const value = row[columnIndex];
         const symbol = QvdFileWriter._convertRawToSymbol(value);
-        const fieldContainsNull = this._symbolTableMetadata?.[this._df.columns.indexOf(column)][2];
+        const fieldContainsNull = this._symbolTableMetadata?.[columnIndex][2];
 
         // None values are represented by bias shifted negative indices
         if (symbol === null) {
           return 0;
         } else {
-          const symbolIndex = this._symbolTable?.[this._df.columns.indexOf(column)].findIndex((/** @type {any} */ s) =>
-            s.equals(symbol),
-          );
+          // Use the Map for O(1) lookup instead of findIndex
+          const key = `${symbol.intValue}|${symbol.doubleValue}|${symbol.stringValue}`;
+          const symbolIndex = symbolIndexMaps?.[columnIndex].get(key);
           // In order to represent None values, the indices are shifted by the bias value of the column
           return fieldContainsNull ? (symbolIndex ?? 0) + 2 : (symbolIndex ?? 0);
         }
@@ -247,6 +312,12 @@ export class QvdFileWriter {
 
       // @ts-ignore - Index array type compatibility
       this._indexTable?.push(stringIndices);
+
+      // Report progress periodically
+      processedRows++;
+      if (processedRows % progressInterval === 0 || processedRows === numRows) {
+        this._emitProgress('index-table', processedRows, numRows);
+      }
     });
 
     // Normalize the bit representation of the indices by padding with zeros

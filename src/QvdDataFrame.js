@@ -479,10 +479,14 @@ export class QvdDataFrame {
    * @param {string} path The path to the QVD file.
    * @param {Object} [options] Optional writing options.
    * @param {string} [options.allowedDir] Optional allowed directory path. If provided, the file path must be within this directory.
+   * @param {Function} [options.onProgress] Optional progress callback function that receives progress updates during write operations.
    */
   async toQvd(path, options = {}) {
     const {QvdFileWriter} = await import('./QvdFileWriter.js');
-    const writerOptions = {allowedDir: options.allowedDir};
+    const writerOptions = {
+      allowedDir: options.allowedDir,
+      onProgress: options.onProgress,
+    };
     await new QvdFileWriter(path, this, writerOptions).save();
   }
 
