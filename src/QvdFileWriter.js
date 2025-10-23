@@ -161,8 +161,10 @@ export class QvdFileWriter {
         NoOfRecords: this._indexTable?.length,
         RecordByteSize: this._recordByteSize,
         Offset:
-          this._symbolTableMetadata?.[this._symbolTableMetadata.length - 1][0] +
-          this._symbolTableMetadata?.[this._symbolTableMetadata.length - 1][1],
+          this._symbolTableMetadata && this._symbolTableMetadata.length > 0
+            ? this._symbolTableMetadata[this._symbolTableMetadata.length - 1][0] +
+              this._symbolTableMetadata[this._symbolTableMetadata.length - 1][1]
+            : 0,
         Length: this._indexBuffer?.length,
       },
     };
@@ -257,9 +259,15 @@ export class QvdFileWriter {
       assert(this._indexTable, 'The QVD file header has not been parsed.');
 
       // Bit width is the maximum bit width of all indices of the column
-      const bitWidth = Math.max(
-        ...this._indexTable.map((/** @type{string[]} */ indices) => indices[this._df.columns.indexOf(column)].length),
-      );
+      // For empty data, default to 0 bit width
+      const bitWidth =
+        this._indexTable.length > 0
+          ? Math.max(
+              ...this._indexTable.map(
+                (/** @type{string[]} */ indices) => indices[this._df.columns.indexOf(column)].length,
+              ),
+            )
+          : 0;
 
       const fieldContainsNull = this._symbolTableMetadata?.[this._df.columns.indexOf(column)][2];
       const bias = fieldContainsNull ? -2 : 0;
@@ -292,7 +300,9 @@ export class QvdFileWriter {
       }),
     );
 
-    this._recordByteSize = this._indexBuffer.length / this._indexTable.length;
+    // For empty data, set record byte size to 1 (matching Qlik Sense behavior)
+    // instead of 0 or NaN/Infinity
+    this._recordByteSize = this._indexTable.length > 0 ? this._indexBuffer.length / this._indexTable.length : 1;
   }
 
   /**

@@ -275,6 +275,70 @@ binary indices that refrences to the values of each row in the symbol table. The
 corresponds to the order of the fields in the XML header. Hence, the index table does not contain the actual values of a
 data record, but only the indices that point to the values in the symbol table.
 
+### Empty QVD Files
+
+QVD files can be empty in the sense that they contain zero data rows while still maintaining valid field definitions and metadata. This is a valid use case in Qlik applications where table structures need to be preserved even when no data is available.
+
+**Characteristics of Empty QVD Files:**
+
+- **NoOfRecords**: Set to `0` in the XML header
+- **RecordByteSize**: Set to `1` (following Qlik Sense's convention)
+- **Fields**: Field definitions are present and complete with metadata
+- **Symbol Table**: Each field has zero symbols (`NoOfSymbols=0`, `Offset=0`, `Length=0`)
+- **Index Table**: Empty with `Length=0`
+- **BitWidth**: Can vary per field (typically `0` or `8`)
+
+**Example Empty QVD XML Header:**
+
+```xml
+<QvdTableHeader>
+  <TableName>EmptyTable</TableName>
+  <Fields>
+    <QvdFieldHeader>
+      <FieldName>Country</FieldName>
+      <BitOffset>0</BitOffset>
+      <BitWidth>0</BitWidth>
+      <Bias>0</Bias>
+      <NoOfSymbols>0</NoOfSymbols>
+      <Offset>0</Offset>
+      <Length>0</Length>
+    </QvdFieldHeader>
+  </Fields>
+  <RecordByteSize>1</RecordByteSize>
+  <NoOfRecords>0</NoOfRecords>
+  <Offset>0</Offset>
+  <Length>0</Length>
+</QvdTableHeader>
+```
+
+**Working with Empty QVDs:**
+
+```javascript
+import {QvdDataFrame} from 'qvd4js';
+
+// Create an empty QVD with field structure but no data
+const emptyDf = new QvdDataFrame(
+  [], // No data rows
+  ['Country', 'Year', 'Sales'], // Column definitions
+);
+
+// Set metadata
+emptyDf.setFileMetadata({
+  tableName: 'EmptyTable',
+  comment: 'Template table structure',
+});
+
+// Write empty QVD (compatible with Qlik Sense)
+await emptyDf.toQvd('empty.qvd');
+
+// Read it back
+const loadedDf = await QvdDataFrame.fromQvd('empty.qvd');
+console.log(loadedDf.shape); // [0, 3] - zero rows, three columns
+console.log(loadedDf.columns); // ['Country', 'Year', 'Sales']
+```
+
+Empty QVDs are fully supported for both reading and writing, maintaining compatibility with files created by Qlik Sense and QlikView.
+
 ## API Documentation
 
 ### QvdDataFrame

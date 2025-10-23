@@ -537,10 +537,23 @@ export class QvdFileReader {
       });
     }
 
-    // Explicitly disallow zero record size to prevent infinite loops
-    if (recordSize === 0) {
-      throw new QvdCorruptedError('Record byte size cannot be zero', {
+    const totalRows = parseInt(this._header['QvdTableHeader']['NoOfRecords'], 10);
+
+    // Validate totalRows
+    if (isNaN(totalRows) || !Number.isSafeInteger(totalRows) || totalRows < 0) {
+      throw new QvdCorruptedError('Invalid number of records', {
+        totalRows,
+        file: this._path,
+        stage: 'parseIndexTable',
+      });
+    }
+
+    // Allow recordSize of 0 or 1 only when there are no records (empty QVD)
+    // Qlik Sense uses recordSize=1 for empty QVDs
+    if (recordSize === 0 && totalRows > 0) {
+      throw new QvdCorruptedError('Record byte size cannot be zero when records exist', {
         recordSize,
+        totalRows,
         file: this._path,
         stage: 'parseIndexTable',
       });
@@ -551,17 +564,6 @@ export class QvdFileReader {
       throw new QvdCorruptedError('Record byte size exceeds maximum', {
         recordSize,
         maxSize: 1048576,
-        file: this._path,
-        stage: 'parseIndexTable',
-      });
-    }
-
-    const totalRows = parseInt(this._header['QvdTableHeader']['NoOfRecords'], 10);
-
-    // Validate totalRows
-    if (isNaN(totalRows) || !Number.isSafeInteger(totalRows) || totalRows < 0) {
-      throw new QvdCorruptedError('Invalid number of records', {
-        totalRows,
         file: this._path,
         stage: 'parseIndexTable',
       });
