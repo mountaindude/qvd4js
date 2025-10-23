@@ -15,9 +15,7 @@ describe('Performance improvements', () => {
     const numRows = 10000;
     const numCols = 10;
     const columns = Array.from({length: numCols}, (_, i) => `Col${i}`);
-    const data = Array.from({length: numRows}, (_, i) =>
-      Array.from({length: numCols}, (_, j) => `Value${i}_${j}`),
-    );
+    const data = Array.from({length: numRows}, (_, i) => Array.from({length: numCols}, (_, j) => `Value${i}_${j}`));
 
     const rawDf = {columns, data};
     const df = await QvdDataFrame.fromDict(rawDf);
