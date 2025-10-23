@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1761147939149,
+  "lastUpdate": 1761221778485,
   "repoUrl": "https://github.com/ptarmiganlabs/qvd4js",
   "entries": {
     "qvd4js Benchmark - macOS-Intel - Node 22.x": [
@@ -293,6 +293,65 @@ window.BENCHMARK_DATA = {
             "name": "Parse with maxRows=1000 (lazy loading)",
             "value": 22.466075584674925,
             "range": "±5.17%",
+            "unit": "ops/sec",
+            "extra": "64 samples"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "goran@ptarmiganlabs.com",
+            "name": "Göran Sander",
+            "username": "mountaindude"
+          },
+          "committer": {
+            "email": "goran@ptarmiganlabs.com",
+            "name": "Göran Sander",
+            "username": "mountaindude"
+          },
+          "distinct": true,
+          "id": "a951eebffba1d5998024942b3f515bcf9fd08966",
+          "message": "feat: add support for empty QVD files with detailed documentation and tests",
+          "timestamp": "2025-10-23T14:00:51+02:00",
+          "tree_id": "cb260b8f2c2896e9a031462e1a90d20730042d5f",
+          "url": "https://github.com/ptarmiganlabs/qvd4js/commit/a951eebffba1d5998024942b3f515bcf9fd08966"
+        },
+        "date": 1761221778459,
+        "tool": "customBiggerIsBetter",
+        "benches": [
+          {
+            "name": "Parse small QVD (~600 rows)",
+            "value": 129.19695849588217,
+            "range": "±2.50%",
+            "unit": "ops/sec",
+            "extra": "128 samples"
+          },
+          {
+            "name": "Parse medium QVD (~18k rows)",
+            "value": 2.8958074389014636,
+            "range": "±9.70%",
+            "unit": "ops/sec",
+            "extra": "64 samples"
+          },
+          {
+            "name": "Parse large QVD (~60k rows)",
+            "value": 1.175852156753106,
+            "range": "±0.80%",
+            "unit": "ops/sec",
+            "extra": "64 samples"
+          },
+          {
+            "name": "Parse with maxRows=100 (lazy loading)",
+            "value": 27.741145275643518,
+            "range": "±6.46%",
+            "unit": "ops/sec",
+            "extra": "64 samples"
+          },
+          {
+            "name": "Parse with maxRows=1000 (lazy loading)",
+            "value": 23.395844128346265,
+            "range": "±4.92%",
             "unit": "ops/sec",
             "extra": "64 samples"
           }
