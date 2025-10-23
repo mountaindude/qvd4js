@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1761221777535,
+  "lastUpdate": 1761231203389,
   "repoUrl": "https://github.com/ptarmiganlabs/qvd4js",
   "entries": {
     "qvd4js Benchmark - Linux - Node 24.x": [
@@ -470,6 +470,65 @@ window.BENCHMARK_DATA = {
             "name": "Parse with maxRows=1000 (lazy loading)",
             "value": 49.7346775917415,
             "range": "±0.33%",
+            "unit": "ops/sec",
+            "extra": "64 samples"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "goran@ptarmiganlabs.com",
+            "name": "Göran Sander",
+            "username": "mountaindude"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "48133f042e40543503fb066385f18163490fecb2",
+          "message": "Merge pull request #54 from ptarmiganlabs/copilot/add-progress-callbacks-performance-improvements\n\nfeat: add progress callbacks and performance improvements for large QVD file writes",
+          "timestamp": "2025-10-23T16:39:21+02:00",
+          "tree_id": "95ee51c5597cb2be0a034e50a073708e8122deee",
+          "url": "https://github.com/ptarmiganlabs/qvd4js/commit/48133f042e40543503fb066385f18163490fecb2"
+        },
+        "date": 1761231203363,
+        "tool": "customBiggerIsBetter",
+        "benches": [
+          {
+            "name": "Parse small QVD (~600 rows)",
+            "value": 232.96483202428746,
+            "range": "±0.52%",
+            "unit": "ops/sec",
+            "extra": "233 samples"
+          },
+          {
+            "name": "Parse medium QVD (~18k rows)",
+            "value": 6.006035920772657,
+            "range": "±1.54%",
+            "unit": "ops/sec",
+            "extra": "64 samples"
+          },
+          {
+            "name": "Parse large QVD (~60k rows)",
+            "value": 2.351180489988883,
+            "range": "±0.45%",
+            "unit": "ops/sec",
+            "extra": "64 samples"
+          },
+          {
+            "name": "Parse with maxRows=100 (lazy loading)",
+            "value": 57.22073185789348,
+            "range": "±6.32%",
+            "unit": "ops/sec",
+            "extra": "64 samples"
+          },
+          {
+            "name": "Parse with maxRows=1000 (lazy loading)",
+            "value": 49.47333263453922,
+            "range": "±0.32%",
             "unit": "ops/sec",
             "extra": "64 samples"
           }
